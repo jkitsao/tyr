@@ -1,6 +1,6 @@
 # tyr
 
-Simple package manager for Javascript
+### Simple package manager for Javascript
 
 # Milestone 1: Basic CLI Setup
 
@@ -9,7 +9,7 @@ Implement the init command to create a basic `package.json` file.
 
 # Milestone 2: Add Command
 
-Implement the add command to fetch and add packages to the project.
+Implement the `add` command to fetch and add packages to the project.
 Support basic dependency resolution.
 
 # Milestone 3: Improved Dependency Resolution

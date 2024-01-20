@@ -1,4 +1,8 @@
+use serde_json::json;
+use std::fs;
 use std::io;
+use std::io::{BufWriter, Write};
+
 //model project type via a struct
 struct Project {
     name: String,
@@ -87,22 +91,40 @@ fn main() {
         .read_line(&mut private_input)
         .expect("Invalid input");
     //construct new project from user input
-    let new_project = Project::new_project(
+    let project = Project::new_project(
         name.trim().parse().unwrap(),
         version.trim().parse().unwrap(),
         description.trim().parse().unwrap(),
-        entry_point.trim().parse().unwrap(),
+        entry_point.trim().to_lowercase().parse().unwrap(),
         repo_url.trim().parse().unwrap(),
         author.trim().parse().unwrap(),
-        license.trim().parse().unwrap(),
+        license.trim().to_uppercase().parse().unwrap(),
         private,
     );
-    println!("Project information {:?}", new_project.name);
-    println!("Project information {:?}", new_project.version);
-    println!("Project information {:?}", new_project.description);
-    println!("Project information {:?}", new_project.entry_point);
-    println!("Project information {:?}", new_project.repo_url);
-    println!("Project information {:?}", new_project.author);
-    println!("Project information {:?}", new_project.license);
-    println!("Project information {:?}", new_project.private);
+
+    // now i can mess with the file system
+    // first build a directory for the project
+    //format project name
+    let dir_name = format!("./{}/", project.name);
+    fs::create_dir_all(dir_name).expect("failed to create directory");
+    // create a package.json file with the project metadata
+    create_package_json_file(project).unwrap();
+}
+fn create_package_json_file(project: Project) -> std::io::Result<()> {
+    let mut path_name = format!("./{}/package.json", project.name);
+    let file = fs::File::create(&mut path_name).expect("failed to create a package.json file");
+    // use serde json create to create a json...
+    //value from the Project Struct and write to a file
+    let package_json_values = json!({
+        "name": project.name,
+        "version": project.version,
+        "main":project.entry_point,
+        "license": project.license
+    });
+    // write to package.json file
+    let mut writer = BufWriter::new(file);
+    // fs::write(&mut path_name, b"Lorem ipsum").expect("failed to write to package.json file");
+    serde_json::to_writer_pretty(&mut writer, &package_json_values)?;
+    writer.flush()?;
+    Ok(())
 }

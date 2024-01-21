@@ -1,8 +1,14 @@
+// use clap::builder::Str;
 use serde_json::json;
+use std::env;
 use std::fs;
 use std::io;
 use std::io::{BufWriter, Write};
-
+// supported commands
+enum Commands {
+    Init(String),
+    Add(String),
+}
 //model project type via a struct
 struct Project {
     name: String,
@@ -48,67 +54,82 @@ fn main() {
     let mut license = String::new();
     let mut private_input = String::new();
     let private = true;
+    //TODO: Get cli args first and add to vector
+    let args: Vec<String> = env::args().collect();
+    let _def_arg = String::from(&args[1]);
+    let primary_arg = &args[2];
+    //secondary args depends on primary (used for dependancies)
+    // let _secondary_arg = &args[3];
 
-    //get name of project
-    println!("Enter the name of your project ");
-    io::stdin()
-        .read_line(&mut name)
-        .expect("Please enter a valid project name");
-    // println!("create a project called {}", name);
-    //get project version
-    println!("Version");
-    io::stdin()
-        .read_line(&mut version)
-        .expect("Please enter a valid version");
-    //get project description
-    println!("Description");
-    io::stdin()
-        .read_line(&mut description)
-        .expect("Please enter a valid description");
-    // get projects entry point
-    println!("Entry Point");
-    io::stdin()
-        .read_line(&mut entry_point)
-        .expect("Please enter a valid entry point");
-    //get repo url
-    println!("Repository url");
-    io::stdin()
-        .read_line(&mut repo_url)
-        .expect("Please enter a valid git url");
-    // get author
-    println!("Author");
-    io::stdin()
-        .read_line(&mut author)
-        .expect("Please enter a valid author name");
-    // get license
-    println!("Licence");
-    io::stdin()
-        .read_line(&mut license)
-        .expect("Please enter a valid License type");
-    //  get is project private
-    println!("Private");
-    io::stdin()
-        .read_line(&mut private_input)
-        .expect("Invalid input");
-    //construct new project from user input
-    let project = Project::new_project(
-        name.trim().parse().unwrap(),
-        version.trim().parse().unwrap(),
-        description.trim().parse().unwrap(),
-        entry_point.trim().to_lowercase().parse().unwrap(),
-        repo_url.trim().parse().unwrap(),
-        author.trim().parse().unwrap(),
-        license.trim().to_uppercase().parse().unwrap(),
-        private,
-    );
+    // dbg!(def_arg, primary_arg);
+    // dbg!(args);
+    //first match the primary for either init or add
+    match primary_arg.as_ref() {
+        "init" => {
+            //get name of project
+            println!("Enter the name of your project ");
+            io::stdin()
+                .read_line(&mut name)
+                .expect("Please enter a valid project name");
+            // println!("create a project called {}", name);
+            //get project version
+            println!("Version");
+            io::stdin()
+                .read_line(&mut version)
+                .expect("Please enter a valid version");
+            //get project description
+            println!("Description");
+            io::stdin()
+                .read_line(&mut description)
+                .expect("Please enter a valid description");
+            // get projects entry point
+            println!("Entry Point");
+            io::stdin()
+                .read_line(&mut entry_point)
+                .expect("Please enter a valid entry point");
+            //get repo url
+            println!("Repository url");
+            io::stdin()
+                .read_line(&mut repo_url)
+                .expect("Please enter a valid git url");
+            // get author
+            println!("Author");
+            io::stdin()
+                .read_line(&mut author)
+                .expect("Please enter a valid author name");
+            // get license
+            println!("Licence");
+            io::stdin()
+                .read_line(&mut license)
+                .expect("Please enter a valid License type");
+            //  get is project private
+            println!("Private");
+            io::stdin()
+                .read_line(&mut private_input)
+                .expect("Invalid input");
+            //construct new project from user input
+            let project = Project::new_project(
+                name.trim().parse().unwrap(),
+                version.trim().parse().unwrap(),
+                description.trim().parse().unwrap(),
+                entry_point.trim().to_lowercase().parse().unwrap(),
+                repo_url.trim().parse().unwrap(),
+                author.trim().parse().unwrap(),
+                license.trim().to_uppercase().parse().unwrap(),
+                private,
+            );
 
-    // now i can mess with the file system
-    // first build a directory for the project
-    //format project name
-    let dir_name = format!("./{}/", project.name);
-    fs::create_dir_all(dir_name).expect("failed to create directory");
-    // create a package.json file with the project metadata
-    create_package_json_file(project).unwrap();
+            // now i can mess with the file system
+            // first build a directory for the project
+            //format project name
+            let dir_name = format!("./{}/", project.name);
+            fs::create_dir_all(dir_name).expect("failed to create directory");
+            // create a package.json file with the project metadata
+            create_package_json_file(project).unwrap();
+        }
+        "add" => println!("proceed to adding dependencies"),
+        _ => println!("nothing special"),
+    };
 }
 fn create_package_json_file(project: Project) -> std::io::Result<()> {
     let mut path_name = format!("./{}/package.json", project.name);

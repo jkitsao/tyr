@@ -1,6 +1,6 @@
 {
   "name": "tyr",
-  "version": "l",
-  "main": "k",
-  "license": "L"
+  "version": "1.0",
+  "main": "index.js",
+  "license": "MIT"
 }

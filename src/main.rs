@@ -1,3 +1,5 @@
+use clap::builder::Str;
+use clap::Error;
 // use clap::builder::Str;
 // use clap::Error;
 // use clap::builder::Str;
@@ -6,16 +8,21 @@
 // use reqwest::Client;
 use semver::{BuildMetadata, Comparator, Op, Prerelease, Version, VersionReq};
 use serde_json::json;
+use std::collections::BTreeMap;
+// use std::fmt::{self};
 // use std::collections::HashMap;
 use flate2::read::GzDecoder; // Add this import for Gzip support
 use serde_json::{from_slice, Value};
 use std::collections::HashMap;
 use std::env;
 use std::fs;
+use std::fs::OpenOptions;
 use std::io;
 use std::io::copy;
+use std::io::Read;
 use std::io::{BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
+// use std::ptr::metadata;
 // use std::string::ParseError;
 use tar::Archive;
 use ureq::{Agent, AgentBuilder};
@@ -165,8 +172,12 @@ fn create_package_json_file(project: Project) -> io::Result<()> {
     let package_json_values = json!({
         "name": project.name,
         "version": project.version,
+        "description":project.description,
         "main":project.entry_point,
-        "license": project.license
+        "repository":project.repo_url,
+        "author":project.author,
+        "license": project.license,
+        "private":project.private
     });
     // write to package.json file
     let mut writer = BufWriter::new(file);
@@ -186,35 +197,25 @@ fn resolve_package_from_registry(dep: String) {
     match version.as_ref() {
         "latest" => {
             println!("i'll dowload the latest version of {}", name);
-            // call download package from registry function with
-            let resolved = resolve_remote_package(name, version).unwrap();
-            // Now 'resolved' contains the parsed JSON data as a HashMap
-            let dist = resolved.get("dist").unwrap();
-            let version = resolved.get("version").unwrap();
-            let tarball = dist.get("tarball").unwrap();
-            let _integrity = dist.get("integrity").unwrap();
-            let name = resolved.get("name").unwrap();
-            // println!("the tar is {:?} and version is {:?}", tarball, version);
-            // println!("proceeding to install {}",name);
-            extract_tarball_to_disk(tarball.as_str().unwrap(), name.as_str().unwrap());
-
-            //latest as version
+            // call package installer
+            let install_db = package_installer(name, version);
+            //create a lock file and update package.json dependancies
+            generate_lock_file(install_db).unwrap(); //also updates/creates dep in package.json
         }
+        //semvar string has been passed
         _ => {
-            let semvar_version = Version::parse(&version).unwrap();
-            let res = resolve_full_version(semvar_version);
+            // version number has been passed
+            // let semvar_version = ;
+            let semvar_version = resolve_full_version(Version::parse(&version).unwrap());
             // let map: HashMap<String, Value> = serde_json::from_value(&semvar_version).unwrap();
-            println!("package is {:?} semvar {:?}", name, res);
+            println!("package you want is {:?} semvar {:?}", name, semvar_version);
             // resolve_remote_package(name, "latest".to_string()).unwrap();
-
-            // call download package from registry function with
-            //semver as version
+            // call package installer with semvar version
+            let install_db = package_installer(name, version);
+            generate_lock_file(install_db).unwrap(); //also updates/creates dep in package.json
+                                                     //semver as version
         }
     }
-    // let mut path_name = format!("./{}/package.json", project.name);
-    // let req = VersionReq::parse(&dep).unwrap();
-    // println!("Package to install {} semvar version {:?}", name, version);
-    // Ok(())
 }
 //resolve semver versions from the name
 fn resolve_semver(name: String) -> (String, String) {
@@ -244,13 +245,6 @@ fn resolve_remote_package(
         .into_string()?;
     // println!("body {:#?}", body);
     let map: HashMap<String, Value> = serde_json::from_str(&body).unwrap();
-    // let profile = map.get("dist").unwrap();
-    // Now 'map' contains the parsed JSON data as a HashMap
-    // println!("the url is {:#?}", url);
-    // let dist = map.get("dist").unwrap();
-    // let version = map.get("version").unwrap();
-    // let tar = dist.get("tarball").unwrap();
-    // println!("the tar is {:?} and version is {:?}", tar, version);
     Ok(map)
 }
 /// If a version comparator has the major, patch and minor available a string version will be returned with the resolved version.
@@ -269,15 +263,6 @@ fn stringify_from_numbers(major: u64, minor: u64, patch: u64) -> String {
     format!("{}.{}.{}", major, minor, patch)
 }
 // install package to disk
-// fn extract_tarball(bytes: Bytes, dest: String) -> Result<(), Error> {
-//     let bytes = &bytes.to_vec()[..];
-//     let gz = GzDecoder::new(bytes);
-//     let mut archive = Archive::new(gz);
-
-//     // All tarballs contain a /package directory to the module source, this should be removed later to keep things as clean as possible
-//     archive.unpack(&dest);
-//     Ok(())
-// }
 fn extract_tarball_to_disk(url: &str, package_name: &str) {
     // URL of the tar file
     // let url = "https://example.com/path/to/your.tar.gz";
@@ -306,30 +291,28 @@ fn extract_tarball_to_disk(url: &str, package_name: &str) {
     let tar_reader = BufReader::new(GzDecoder::new(tar_file));
     // Create a tar archive from the file
     let mut archive = Archive::new(tar_reader);
-
     // Extract the contents of the tar file to the custom project folder
+    // ** we also remove the default /package from the tar returned by NPM**
     archive
         .entries()
         .expect("Failed to get tar entries")
-        .filter_map(|entry| {
-            // Filter entries under "/package" and adjust the extraction path
-            let entry = entry.expect("Failed to get tar entry");
-            let entry_path = entry.path().expect("Failed to get entry path");
-            if entry_path.starts_with("package/") {
-                Some(entry)
-            } else {
-                None
-            }
-        })
-        .for_each(|mut entry| {
-            let dest_path = {
-                let path = entry.path().expect("Failed to get entry path");
-                let suffix = path
-                    .strip_prefix("package/")
-                    .expect("Failed to strip prefix");
-                PathBuf::from(&dest_folder).join(suffix)
-            };
+        .for_each(|entry| {
+            let mut entry = entry.expect("Failed to get tar entry");
 
+            // Handle variations in the directory structure
+            let entry_path = entry.path().expect("Failed to get entry path");
+            let relative_path = entry_path
+                .strip_prefix("package/")
+                .unwrap_or_else(|_| &entry_path); // Use original path if strip_prefix fails
+
+            let dest_path = PathBuf::from(&dest_folder).join(relative_path);
+
+            // Ensure the parent directory exists
+            if let Some(parent_dir) = dest_path.parent() {
+                std::fs::create_dir_all(parent_dir).expect("Failed to create parent directory");
+            }
+
+            // Unpack the entry to the adjusted destination path
             entry
                 .unpack(&dest_path)
                 .expect("Failed to unpack tar entry");
@@ -339,4 +322,158 @@ fn extract_tarball_to_disk(url: &str, package_name: &str) {
     std::fs::remove_file("temp.tar.gz").expect("Failed to remove temp file");
 
     println!("Tar file has been successfully downloaded and unpacked.");
+}
+//installer function that resolves remote packages and arranges to disk
+fn package_installer(name: String, version: String) -> HashMap<String, Value> {
+    // call download package from registry function with
+    let resolved = resolve_remote_package(name, version).unwrap();
+    // Now 'resolved' contains the parsed JSON data as a HashMap
+    let dist = resolved.get("dist").unwrap();
+    let version = resolved.get("version").unwrap();
+    let tarball = dist.get("tarball").unwrap();
+    let _integrity = dist.get("integrity").unwrap();
+    let name = resolved.get("name").unwrap();
+    // println!("the tar is {:?} and version is {:?}", tarball, version);
+    println!("proceeding to install {}  version {}", name, version);
+    extract_tarball_to_disk(tarball.as_str().unwrap(), name.as_str().unwrap());
+    resolved
+}
+//Generate lock files with package name,version,resolve url, and integrity checksum
+fn generate_lock_file(package: HashMap<String, Value>) -> Result<(), Error> {
+    //model lock content
+    struct LockFile {
+        name: String,
+        version: String,
+        resolved: String,
+        integrity: String,
+    }
+    //formatter function returns placeholders without double quotes around the name, version, resolved, and integrity
+    impl LockFile {
+        fn format_for_lock_file(&self) -> String {
+            format!(
+                "\n \n {}@{}:\n version {}\n  resolved {}\n  integrity {}",
+                self.name, self.version, self.version, self.resolved, self.integrity
+            )
+        }
+    }
+    //get required values from hashmap
+    let dist = package.get("dist").unwrap();
+    let version = package.get("version").unwrap();
+    let tarball = dist.get("tarball").unwrap();
+    let integrity = dist.get("integrity").unwrap();
+    let name = package.get("name").unwrap();
+    //create a lock file with fs package and write to it
+    let mut path_name = format!("./node_tests/tyr.lock");
+    // fs::File::create(path)
+    let mut file = OpenOptions::new()
+        .append(true)
+        .create(true)
+        .open(&mut path_name)
+        .expect("failed to create a package.lock file");
+    //construct a new lock object with package metadata
+    let lock = LockFile {
+        name: name.to_string(),
+        version: version.to_string(),
+        integrity: integrity.to_string(),
+        resolved: tarball.to_string(),
+    };
+    // let formatted = lock.format_for_lock_file();
+    write!(file, "{}", &lock.format_for_lock_file())?;
+    println!("Saved lockfile");
+    update_package_jason_dep(package).unwrap();
+
+    Ok(())
+}
+//function to update dependancy packages after installation
+//first model the dep struct and package struct
+
+fn update_package_jason_dep(package: HashMap<String, Value>) -> io::Result<()> {
+    //read contents of the file
+    let path_name = format!("./node_tests/package.json");
+    let file = fs::File::open(path_name).unwrap();
+    let reader = BufReader::new(file);
+    // Read the JSON contents of the file and assign to Hashmap.
+    let json_file_data: BTreeMap<String, Value> = serde_json::from_reader(reader)?;
+
+    let version: String = package
+        .get("version")
+        .unwrap()
+        .to_string()
+        .trim_matches('"')
+        .parse()
+        .unwrap();
+    let name: String = package
+        .get("name")
+        .unwrap()
+        .to_string()
+        .trim_matches('"')
+        .parse()
+        .unwrap();
+    let is_dep_init = json_file_data.contains_key("dependencies");
+
+    match is_dep_init {
+        true => {
+            println!("Dep object detected we should append to json");
+            //update the dep object with installed package metadata
+            update_dep_obj(json_file_data, name, version).unwrap();
+        }
+        false => {
+            println!("Dep object not found we should create then add");
+            // probably the first package
+            create_dep_obj(json_file_data, name, version).unwrap();
+        }
+    }
+    // println!("is dependencies initiated in project {:?}", is_dep_init);
+    Ok(())
+}
+// create dep object on the package.json file with new package metadata
+fn create_dep_obj(
+    mut metadata: BTreeMap<String, Value>,
+    name: String,
+    version: String,
+) -> io::Result<()> {
+    // create the json value with serde
+    let value = json!({
+        "dependencies": {
+            name:version
+        }
+    });
+    // metadata.insert(k, v)
+    let dep_value: BTreeMap<String, Value> = serde_json::from_value(value).unwrap();
+    //merge the 2 data structures
+    metadata.extend(dep_value);
+    let result = json!(metadata);
+    let mut path_name = format!("./node_tests/package.json");
+    let file = fs::File::create(&mut path_name).expect("failed to create a package.json file");
+    // write to package.json file
+    let mut writer = BufWriter::new(file);
+    // fs::write(&mut path_name, b"Lorem ipsum").expect("failed to write to package.json file");
+    serde_json::to_writer_pretty(&mut writer, &result)?;
+    writer.flush()?;
+    Ok(())
+}
+//update the dependency object
+fn update_dep_obj(
+    mut metadata: BTreeMap<String, Value>,
+    name: String,
+    version: String,
+) -> io::Result<()> {
+    // create the json value with serde
+    let current_dep: Value = metadata.get_mut("dependencies").unwrap().clone();
+    //append installed package meta on the current_dep value
+    let mut temp_json: HashMap<String, String> = serde_json::from_value(current_dep).unwrap();
+    temp_json.insert(name, version);
+    //update package.json instance with new dependancies
+    if let Some(x) = metadata.get_mut("dependencies") {
+        *x = json!(temp_json);
+    };
+    // println!("metadata {:?}", metadata);
+    //write output to file
+    //serialize first
+    let results = json!(metadata);
+    let mut path_name = format!("./node_tests/package.json");
+    let file = fs::File::create(&mut path_name).expect("failed to create a package.json file");
+    let mut writer = BufWriter::new(file);
+    serde_json::to_writer_pretty(&mut writer, &results)?;
+    Ok(())
 }

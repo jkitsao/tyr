@@ -1,39 +1,23 @@
-use clap::builder::Str;
+// use clap::builder::Str;
 use clap::Error;
-// use clap::builder::Str;
-// use clap::Error;
-// use clap::builder::Str;
-// use reqwest;
-// use reqwest::header::ALLOW;
-// use reqwest::Client;
-use semver::{BuildMetadata, Comparator, Op, Prerelease, Version, VersionReq};
+mod http;
+mod semvar;
+mod unzip;
 use serde_json::json;
 use std::collections::BTreeMap;
 // use std::fmt::{self};
 // use std::collections::HashMap;
-use flate2::read::GzDecoder; // Add this import for Gzip support
-use serde_json::{from_slice, Value};
+use serde_json::Value;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::fs::OpenOptions;
 use std::io;
-use std::io::copy;
-use std::io::Read;
+// use std::io::copy;
+// use std::io::Read;
 use std::io::{BufReader, BufWriter, Write};
-use std::path::{Path, PathBuf};
-// use std::ptr::metadata;
-// use std::string::ParseError;
-use tar::Archive;
-use ureq::{Agent, AgentBuilder};
-// registry url
-const NPM_REGISTRY_URL: &str = "https://registry.npmjs.org";
-// supported commands
-enum Commands {
-    Init(String),
-    Add(String),
-}
-//model project type via a struct
+// use std::path;
+
 struct Project {
     name: String,
     version: String,
@@ -156,6 +140,9 @@ fn main() {
         "add" => {
             let dep = secondary_arg.expect("Provide a valid dependancy");
             resolve_package_from_registry(dep.to_string());
+            //read the package.json of installed dep to get the next one
+            //
+            resolve_next_dep(dep.to_string());
             // println!("{:?}", dep);
         }
         // install all dep in current package.json file
@@ -192,7 +179,7 @@ fn create_package_json_file(project: Project) -> io::Result<()> {
 // proceed to generate a lock file with
 //also parse semver version if provided but i'll start
 fn resolve_package_from_registry(dep: String) {
-    let (name, version) = resolve_semver(dep);
+    let (name, version) = semvar::split_package_version(&dep);
     // println!("package is {}, and the version is {}", name, version);
     match version.as_ref() {
         "latest" => {
@@ -206,10 +193,7 @@ fn resolve_package_from_registry(dep: String) {
         _ => {
             // version number has been passed
             // let semvar_version = ;
-            let semvar_version = resolve_full_version(Version::parse(&version).unwrap());
-            // let map: HashMap<String, Value> = serde_json::from_value(&semvar_version).unwrap();
-            println!("package you want is {:?} semvar {:?}", name, semvar_version);
-            // resolve_remote_package(name, "latest".to_string()).unwrap();
+            // let _semvar_version = resolve_full_version(Version::parse(&version).unwrap());
             // call package installer with semvar version
             let install_db = package_installer(name, version);
             generate_lock_file(install_db).unwrap(); //also updates/creates dep in package.json
@@ -217,116 +201,12 @@ fn resolve_package_from_registry(dep: String) {
         }
     }
 }
-//resolve semver versions from the name
-fn resolve_semver(name: String) -> (String, String) {
-    let package;
-    let version;
-    if name.contains("@") {
-        let v: Vec<&str> = name.split('@').collect();
-        package = v[0];
-        version = v[1];
-        (package.to_string(), version.to_string())
-    } else {
-        (name.to_string(), "latest".to_string())
-    }
-}
-//function to send http request
-fn resolve_remote_package(
-    name: String,
-    version: String,
-) -> Result<HashMap<String, Value>, ureq::Error> {
-    let url = format!("{}/{}/{}", NPM_REGISTRY_URL, name, version);
-    let body: String = ureq::get(&url)
-        .set(
-            "ALLOW",
-            "application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*",
-        )
-        .call()?
-        .into_string()?;
-    // println!("body {:#?}", body);
-    let map: HashMap<String, Value> = serde_json::from_str(&body).unwrap();
-    Ok(map)
-}
-/// If a version comparator has the major, patch and minor available a string version will be returned with the resolved version.
-/// This version string can be used to retrieve a package version from the NPM registry.
-/// If the version is not resolvable without requesting the full package data, None will be returned.
-/// None will also be returned if the version operator is Op::Less (<?.?.?) because we need all versions to get the latest version less than this
-pub fn resolve_full_version(semantic_version: Version) -> String {
-    // println!("major {}", semantic_version.major)
-    stringify_from_numbers(
-        semantic_version.major,
-        semantic_version.minor,
-        semantic_version.patch,
-    )
-}
-fn stringify_from_numbers(major: u64, minor: u64, patch: u64) -> String {
-    format!("{}.{}.{}", major, minor, patch)
-}
+
 // install package to disk
-fn extract_tarball_to_disk(url: &str, package_name: &str) {
-    // URL of the tar file
-    // let url = "https://example.com/path/to/your.tar.gz";
-
-    // Destination folder
-    // let dest_folder = "./node_tests/node_modules";
-    let dest_folder = format!("./node_tests/node_modules/{}", package_name);
-
-    // Create the destination folder if it doesn't exist
-    if !Path::new(dest_folder.as_str()).exists() {
-        std::fs::create_dir_all(&dest_folder).expect("Failed to create destination folder");
-    }
-
-    // Download the tar file using ureq
-    let response = ureq::get(url).call().expect("failed to download tar");
-    // Create a temporary file to store the downloaded tar file
-    let mut temp_file = fs::File::create("temp.tar.gz").expect("Failed to create temp file");
-
-    // Copy the response body to the temporary file
-    copy(&mut response.into_reader(), &mut temp_file)
-        .expect("Failed to copy response body to file");
-
-    // Open the downloaded tar file
-    let tar_file = fs::File::open("temp.tar.gz").expect("Failed to open tar file");
-    // Use Gzip decoder for decompression
-    let tar_reader = BufReader::new(GzDecoder::new(tar_file));
-    // Create a tar archive from the file
-    let mut archive = Archive::new(tar_reader);
-    // Extract the contents of the tar file to the custom project folder
-    // ** we also remove the default /package from the tar returned by NPM**
-    archive
-        .entries()
-        .expect("Failed to get tar entries")
-        .for_each(|entry| {
-            let mut entry = entry.expect("Failed to get tar entry");
-
-            // Handle variations in the directory structure
-            let entry_path = entry.path().expect("Failed to get entry path");
-            let relative_path = entry_path
-                .strip_prefix("package/")
-                .unwrap_or_else(|_| &entry_path); // Use original path if strip_prefix fails
-
-            let dest_path = PathBuf::from(&dest_folder).join(relative_path);
-
-            // Ensure the parent directory exists
-            if let Some(parent_dir) = dest_path.parent() {
-                std::fs::create_dir_all(parent_dir).expect("Failed to create parent directory");
-            }
-
-            // Unpack the entry to the adjusted destination path
-            entry
-                .unpack(&dest_path)
-                .expect("Failed to unpack tar entry");
-        });
-
-    // Cleanup: Remove the temporary tar file
-    std::fs::remove_file("temp.tar.gz").expect("Failed to remove temp file");
-
-    println!("Tar file has been successfully downloaded and unpacked.");
-}
 //installer function that resolves remote packages and arranges to disk
 fn package_installer(name: String, version: String) -> HashMap<String, Value> {
     // call download package from registry function with
-    let resolved = resolve_remote_package(name, version).unwrap();
+    let resolved = http::resolve_remote_package(name, version).unwrap();
     // Now 'resolved' contains the parsed JSON data as a HashMap
     let dist = resolved.get("dist").unwrap();
     let version = resolved.get("version").unwrap();
@@ -335,7 +215,7 @@ fn package_installer(name: String, version: String) -> HashMap<String, Value> {
     let name = resolved.get("name").unwrap();
     // println!("the tar is {:?} and version is {:?}", tarball, version);
     println!("proceeding to install {}  version {}", name, version);
-    extract_tarball_to_disk(tarball.as_str().unwrap(), name.as_str().unwrap());
+    unzip::extract_tarball_to_disk(tarball.as_str().unwrap(), name.as_str().unwrap());
     resolved
 }
 //Generate lock files with package name,version,resolve url, and integrity checksum
@@ -413,9 +293,11 @@ fn update_package_jason_dep(package: HashMap<String, Value>) -> io::Result<()> {
 
     match is_dep_init {
         true => {
-            println!("Dep object detected we should append to json");
+            // println!("Dep object detected we should append to json");
             //update the dep object with installed package metadata
-            update_dep_obj(json_file_data, name, version).unwrap();
+            update_dep_obj(json_file_data, name.clone(), version).unwrap();
+            resolve_next_dep(name.to_string());
+            // println!("maybe read {} package and see", name);
         }
         false => {
             println!("Dep object not found we should create then add");
@@ -476,4 +358,51 @@ fn update_dep_obj(
     let mut writer = BufWriter::new(file);
     serde_json::to_writer_pretty(&mut writer, &results)?;
     Ok(())
+}
+//fetch next dep after instalation of package
+//to resolve the next dependancies
+fn resolve_next_dep(name: String) {
+    let path_name = format!("./node_tests/node_modules/{}/package.json", name);
+    let file = fs::File::open(path_name).unwrap();
+    let reader = BufReader::new(file);
+    // Read the JSON contents of the file and assign to Hashmap.
+    let mut json_file_data: BTreeMap<String, Value> = serde_json::from_reader(reader).unwrap();
+    //match to check id dep is available
+    match json_file_data.contains_key("dependencies") {
+        true => {
+            let next_dep: Value = json_file_data.get_mut("dependencies").unwrap().clone();
+            let temp_json: HashMap<String, String> = serde_json::from_value(next_dep).unwrap();
+            let it = temp_json.iter();
+            // let string_name=String
+            // println!("**** The next package is {:?}", temp_json);
+            //parse the values before calling install
+            //check if theres dep
+            match temp_json.is_empty() {
+                true => {
+                    print!("********  no more dependencies *********");
+                }
+                false => {
+                    // println!("{:?}", it);
+                    // Iterate over the keys and values of the hashmap
+                    for (key, value) in it {
+                        // Remove backticks from the value
+                        let new_value = value.replace('^', "");
+                        println!("Key: {}, Value: {}", key, value);
+                        let package_name = format!("{}@{}", key, new_value);
+                        // println!("{}", package_name);
+                        //
+                        println!("****** installing the next one {:?} \n \n", package_name);
+                        resolve_package_from_registry(package_name.to_string());
+                    }
+                    //format the map values to stringproceeding to install
+                }
+            }
+        }
+        //package.json does not contain dependency field
+        false => {
+            println!("No dependencies in package")
+        }
+    }
+
+    // check if dep has been installed
 }

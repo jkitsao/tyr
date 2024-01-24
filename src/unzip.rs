@@ -8,8 +8,9 @@ use std::path::{Path, PathBuf};
 use crate::console;
 use tar::Archive;
 // use ureq;
-use std::time::Duration;
-use ureq::{Agent, AgentBuilder, Error};
+use std::{thread, time::Duration};
+use ureq::Error::Status;
+use ureq::{Agent, AgentBuilder};
 pub fn extract_tarball_to_disk(url: &str, package_name: &str) {
     //create ureq agent
     let agent: Agent = AgentBuilder::new()
@@ -69,7 +70,7 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) {
             }
             let mut res = bar.wrap_read(response.into_reader());
             // Copy the response body to the temporary file
-            bar.finish_and_clear();
+            // bar.finish_and_clear();
             copy(&mut res, &mut temp_file).expect("Failed to copy response body to file");
 
             // Open the downloaded tar file
@@ -114,14 +115,27 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) {
             console::show_success(message)
             // println!("Tar file has been successfully downloaded and unpacked.");
         }
-        Err(Error::Status(_code, _response)) => {
-            /* the server returned an unexpected status
-            code (such as 400, 500 etc) */
-            eprint!("Error code from the server");
+        // Err(Error::Status(_code, _response)) => {
+        //     /* the server returned an unexpected status
+        //     code (such as 400, 500 etc) */
+        //     eprint!("Error code from the server");
+        // }
+
+        // match ureq::get(url).call() {
+        Err(Status(503, r)) | Err(Status(429, r)) => {
+            for _ in 1..4 {
+                let retry: Option<u64> = r.header("retry-after").and_then(|h| h.parse().ok());
+                let retry = retry.unwrap_or(5);
+                eprintln!("{} for {}, retry in {}", r.status(), r.get_url(), retry);
+                thread::sleep(Duration::from_secs(retry));
+            }
         }
+
+        // };
         Err(_) => {
             /* some kind of io/transport error */
-            eprintln!("Failed please check your connection")
+            eprintln!("Failed please check your connection");
+            extract_tarball_to_disk(url, package_name)
         }
     }
 }

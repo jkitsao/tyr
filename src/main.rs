@@ -1,6 +1,7 @@
 // use clap::builder::Str;
 use clap::Error;
 mod http;
+mod init;
 mod semvar;
 mod unzip;
 use serde_json::json;
@@ -17,125 +18,19 @@ use std::io;
 // use std::io::Read;
 use std::io::{BufReader, BufWriter, Write};
 // use std::path;
-
-struct Project {
-    name: String,
-    version: String,
-    description: String,
-    entry_point: String,
-    repo_url: String,
-    author: String,
-    license: String,
-    private: bool,
-}
-impl Project {
-    fn new_project(
-        name: String,
-        version: String,
-        description: String,
-        entry_point: String,
-        repo_url: String,
-        author: String,
-        license: String,
-        private: bool,
-    ) -> Project {
-        Project {
-            name,
-            version,
-            description,
-            entry_point,
-            repo_url,
-            author,
-            license,
-            private,
-        }
-    }
-}
 fn main() {
-    // cache required variables
-    let mut name = String::new();
-    let mut version = String::new();
-    let mut description = String::new();
-    let mut entry_point = String::new();
-    let mut repo_url = String::new();
-    let mut author = String::new();
-    let mut license = String::new();
-    let mut private_input = String::new();
-    let private = true;
     //TODO: Get cli args first and add to vector
     let args: Vec<String> = env::args().collect();
     let _def_arg = String::from(&args[1]);
     let primary_arg = &args[2];
     //secondary args depends on primary (used for dependancies)
     let secondary_arg = args.get(3);
-
     // dbg!(def_arg, primary_arg);
     // dbg!(args);
     //first match the primary for either init or add
     match primary_arg.as_ref() {
-        "init" => {
-            //get name of project
-            println!("Enter the name of your project ");
-            io::stdin()
-                .read_line(&mut name)
-                .expect("Please enter a valid project name");
-            // println!("create a project called {}", name);
-            //get project version
-            println!("Version");
-            io::stdin()
-                .read_line(&mut version)
-                .expect("Please enter a valid version");
-            //get project description
-            println!("Description");
-            io::stdin()
-                .read_line(&mut description)
-                .expect("Please enter a valid description");
-            // get projects entry point
-            println!("Entry Point");
-            io::stdin()
-                .read_line(&mut entry_point)
-                .expect("Please enter a valid entry point");
-            //get repo url
-            println!("Repository url");
-            io::stdin()
-                .read_line(&mut repo_url)
-                .expect("Please enter a valid git url");
-            // get author
-            println!("Author");
-            io::stdin()
-                .read_line(&mut author)
-                .expect("Please enter a valid author name");
-            // get license
-            println!("Licence");
-            io::stdin()
-                .read_line(&mut license)
-                .expect("Please enter a valid License type");
-            //  get is project private
-            println!("Private");
-            io::stdin()
-                .read_line(&mut private_input)
-                .expect("Invalid input");
-            //construct new project from user input
-            let project = Project::new_project(
-                name.trim().parse().unwrap(),
-                version.trim().parse().unwrap(),
-                description.trim().parse().unwrap(),
-                entry_point.trim().to_lowercase().parse().unwrap(),
-                repo_url.trim().parse().unwrap(),
-                author.trim().parse().unwrap(),
-                license.trim().to_uppercase().parse().unwrap(),
-                private,
-            );
-
-            // now i can mess with the file system
-            // first build a directory for the project
-            //format project name
-            let dir_name = format!("./node_tests/");
-            fs::create_dir_all(dir_name).expect("failed to create directory");
-            // create a package.json file with the project metadata
-            create_package_json_file(project).unwrap();
-            println!("success Saved package.json");
-        }
+        //init command:
+        "init" => init::init_new_project(),
         //handle the add command
         "add" => {
             let dep = secondary_arg.expect("Provide a valid dependancy");
@@ -150,28 +45,6 @@ fn main() {
         "tyr" => println!("proceed to installing dependencies"),
         _ => println!("nothing special"),
     };
-}
-fn create_package_json_file(project: Project) -> io::Result<()> {
-    let mut path_name = format!("./node_tests/package.json");
-    let file = fs::File::create(&mut path_name).expect("failed to create a package.json file");
-    // use serde json create to create a json...
-    //value from the Project Struct and write to a file
-    let package_json_values = json!({
-        "name": project.name,
-        "version": project.version,
-        "description":project.description,
-        "main":project.entry_point,
-        "repository":project.repo_url,
-        "author":project.author,
-        "license": project.license,
-        "private":project.private
-    });
-    // write to package.json file
-    let mut writer = BufWriter::new(file);
-    // fs::write(&mut path_name, b"Lorem ipsum").expect("failed to write to package.json file");
-    serde_json::to_writer_pretty(&mut writer, &package_json_values)?;
-    writer.flush()?;
-    Ok(())
 }
 //resolve dependancy/impl add command
 //first step is to download the passed dep(is-even) from npm to a node_modules folder
@@ -192,8 +65,7 @@ fn resolve_package_from_registry(dep: String) {
         //semvar string has been passed
         _ => {
             // version number has been passed
-            // let semvar_version = ;
-            // let _semvar_version = resolve_full_version(Version::parse(&version).unwrap());
+
             // call package installer with semvar version
             let install_db = package_installer(name, version);
             generate_lock_file(install_db).unwrap(); //also updates/creates dep in package.json

@@ -6,6 +6,7 @@ mod semvar;
 mod unzip;
 use serde_json::json;
 use std::collections::BTreeMap;
+mod console;
 // use std::fmt::{self};
 // use std::collections::HashMap;
 use serde_json::Value;
@@ -56,7 +57,8 @@ fn resolve_package_from_registry(dep: String) {
     // println!("package is {}, and the version is {}", name, version);
     match version.as_ref() {
         "latest" => {
-            println!("i'll dowload the latest version of {}", name);
+            let message = format!("Querying NPM for {}", name);
+            console::show_success(message);
             // call package installer
             let install_db = package_installer(name, version);
             //create a lock file and update package.json dependancies
@@ -65,7 +67,8 @@ fn resolve_package_from_registry(dep: String) {
         //semvar string has been passed
         _ => {
             // version number has been passed
-
+            let message = format!("Querying NPM for {}", name);
+            console::show_success(message);
             // call package installer with semvar version
             let install_db = package_installer(name, version);
             generate_lock_file(install_db).unwrap(); //also updates/creates dep in package.json
@@ -86,7 +89,9 @@ fn package_installer(name: String, version: String) -> HashMap<String, Value> {
     let _integrity = dist.get("integrity").unwrap();
     let name = resolved.get("name").unwrap();
     // println!("the tar is {:?} and version is {:?}", tarball, version);
-    println!("proceeding to install {}  version {}", name, version);
+    // println!("proceeding to install {}  version {}", name, version);
+    let message = format!("Installing {}@{}", name, version);
+    console::show_info(message);
     unzip::extract_tarball_to_disk(tarball.as_str().unwrap(), name.as_str().unwrap());
     resolved
 }
@@ -131,14 +136,13 @@ fn generate_lock_file(package: HashMap<String, Value>) -> Result<(), Error> {
     };
     // let formatted = lock.format_for_lock_file();
     write!(file, "{}", &lock.format_for_lock_file())?;
-    println!("Saved lockfile");
+    // println!("Saved lockfile");
     update_package_jason_dep(package).unwrap();
 
     Ok(())
 }
 //function to update dependancy packages after installation
 //first model the dep struct and package struct
-
 fn update_package_jason_dep(package: HashMap<String, Value>) -> io::Result<()> {
     //read contents of the file
     let path_name = format!("./node_tests/package.json");

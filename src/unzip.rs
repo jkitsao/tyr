@@ -1,9 +1,11 @@
 use flate2::read::GzDecoder; // Add this import for Gzip support
+use indicatif::ProgressBar;
 use std::fs;
 // use std::io::copy;
 use std::io::{copy, BufReader};
 use std::path::{Path, PathBuf};
-
+//import console create
+use crate::console;
 use tar::Archive;
 // use ureq;
 use std::time::Duration;
@@ -27,6 +29,15 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) {
     }
 
     // Download the tar file using ureq
+    // let bar = ProgressBar::new(1000).with_prefix("Downloading");
+    let bar = ProgressBar::new(!0)
+        .with_prefix("Downloading")
+        .with_style(
+            indicatif::ProgressStyle::default_spinner()
+                .template("{prefix:>12.bright.cyan} {spinner} {msg:.cyan}")
+                .unwrap(),
+        )
+        .with_message("Done");
     let response = agent.get(url).call();
     // Create a temporary file to store the downloaded tar file
     /***
@@ -40,10 +51,26 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) {
         Ok(response) => {
             let mut temp_file = fs::File::create("./node_tests/node_modules/temp.tar.gz")
                 .expect("Failed to create temp file");
-
+            //
+            if let Some(length) = response
+                .header("content-length")
+                .and_then(|l| l.parse().ok())
+            {
+                bar.set_style(
+                indicatif::ProgressStyle::default_bar()
+                    .template("{prefix:>12.bright.cyan} [{bar:27}] {bytes:>9}/{total_bytes:9}  {bytes_per_sec}  ETA {eta:4} - {msg:.cyan}").unwrap()
+                    .progress_chars("=> "));
+                bar.set_length(length);
+            } else {
+                bar.println("Length unspecified, expect at least 250MiB");
+                bar.set_style(indicatif::ProgressStyle::default_spinner().template(
+                "{prefix:>12.bright.cyan} {spinner} {bytes:>9} {bytes_per_sec} - {msg:.cyan}",
+            ).unwrap());
+            }
+            let mut res = bar.wrap_read(response.into_reader());
             // Copy the response body to the temporary file
-            copy(&mut response.into_reader(), &mut temp_file)
-                .expect("Failed to copy response body to file");
+            bar.finish_and_clear();
+            copy(&mut res, &mut temp_file).expect("Failed to copy response body to file");
 
             // Open the downloaded tar file
             let tar_file = fs::File::open("./node_tests/node_modules/temp.tar.gz")
@@ -83,8 +110,9 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) {
             // Cleanup: Remove the temporary tar file
             std::fs::remove_file("./node_tests/node_modules/temp.tar.gz")
                 .expect("Failed to remove temp file");
-
-            println!("Tar file has been successfully downloaded and unpacked.");
+            let message = format!("{} has been successfully downloaded", package_name);
+            console::show_success(message)
+            // println!("Tar file has been successfully downloaded and unpacked.");
         }
         Err(Error::Status(_code, _response)) => {
             /* the server returned an unexpected status

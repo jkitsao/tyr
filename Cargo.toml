@@ -11,6 +11,7 @@ dialoguer = "0.11.0"
 flate2 = "1.0.28"
 indicatif = "0.17.7"
 nodejs-semver = "3.4.0"
+qndr = "0.1.7"
 regex = "1.10.3"
 reqwest = { version = "0.11.23", features = ["blocking", "json"] }
 semver = "1.0.21"

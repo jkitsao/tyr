@@ -13,11 +13,12 @@ pub fn resolve_remote_package(
     version: String,
 ) -> Result<HashMap<String, Value>, ureq::Error> {
     // println!("name is {}", name);
+    // let trimmed = version.trim_matches("~");
     // let message = format!("Installing {}@{}", name, version);
     // console::show_info(message);
     let url_encoded_name: String = form_urlencoded::byte_serialize(name.as_bytes()).collect();
     let url = format!("{}/{}/{}", NPM_REGISTRY_URL, url_encoded_name, version);
-    // println!("URL IS : {}", url);
+    println!("URL IS : {}", url);
     let res = ureq::get(&url)
         .set(
             "ALLOW",

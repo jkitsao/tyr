@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 use crate::console;
 use tar::Archive;
 // use ureq;
+use indicatif::{HumanBytes, HumanCount, HumanDuration, HumanFloatCount};
 use std::{thread, time::Duration};
 use ureq::Error::Status;
 use ureq::{Agent, AgentBuilder};
@@ -31,14 +32,12 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) {
 
     // Download the tar file using ureq
     // let bar = ProgressBar::new(1000).with_prefix("Downloading");
-    let bar = ProgressBar::new(!0)
-        .with_prefix("Downloading")
-        .with_style(
-            indicatif::ProgressStyle::default_spinner()
-                .template("{prefix:>12.bright.cyan} {spinner} {msg:.cyan}")
-                .unwrap(),
-        )
-        .with_message("Done");
+    let bar = ProgressBar::new(!0).with_prefix("Downloading").with_style(
+        indicatif::ProgressStyle::default_spinner()
+            .template("{prefix:>12.bright.cyan} {spinner} {msg:.cyan}")
+            .unwrap(),
+    );
+
     let response = agent.get(url).call();
     // Create a temporary file to store the downloaded tar file
     /***
@@ -52,27 +51,29 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) {
         Ok(response) => {
             let mut temp_file = fs::File::create("./node_tests/node_modules/temp.tar.gz")
                 .expect("Failed to create temp file");
-            //
+            //show download progress for tar file
             if let Some(length) = response
                 .header("content-length")
                 .and_then(|l| l.parse().ok())
             {
                 bar.set_style(
                 indicatif::ProgressStyle::default_bar()
-                    .template("{prefix:>12.bright.cyan} [{bar:27}] {bytes:>9}/{total_bytes:9}  {bytes_per_sec}  ETA {eta:4} - {msg:.cyan}").unwrap()
+                    .template("{prefix:>12.bright.cyan} [{bar:27}] {bytes:>9}/{total_bytes:9}  {bytes_per_sec}  ETA {eta:4}").unwrap()
                     .progress_chars("=> "));
                 bar.set_length(length);
             } else {
                 bar.println("Length unspecified, expect at least 250MiB");
-                bar.set_style(indicatif::ProgressStyle::default_spinner().template(
-                "{prefix:>12.bright.cyan} {spinner} {bytes:>9} {bytes_per_sec} - {msg:.cyan}",
-            ).unwrap());
+                bar.set_style(
+                    indicatif::ProgressStyle::default_spinner()
+                        .template("{prefix:>12.bright.cyan} {spinner} {bytes:>9} {bytes_per_sec}")
+                        .unwrap(),
+                );
             }
             let mut res = bar.wrap_read(response.into_reader());
             // Copy the response body to the temporary file
             // bar.finish_and_clear();
             copy(&mut res, &mut temp_file).expect("Failed to copy response body to file");
-
+            bar.finish_and_clear();
             // Open the downloaded tar file
             let tar_file = fs::File::open("./node_tests/node_modules/temp.tar.gz")
                 .expect("Failed to open tar file");
@@ -80,7 +81,20 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) {
             let tar_reader = BufReader::new(GzDecoder::new(tar_file));
             // Create a tar archive from the file
             let mut archive = Archive::new(tar_reader);
+            // let arch_two = &mut archive;
             // Extract the contents of the tar file to the custom project folder
+            // for entry in archive.entries()? {
+            //     entry?.unpack_in(".")?;
+            //     let pos = tar_file.seek(SeekFrom::Current(0))?;
+            // }
+
+            //show progress update on this
+            //extraction bar
+            let ext_bar = ProgressBar::new(!0).with_prefix("Unpacking: ").with_style(
+                indicatif::ProgressStyle::default_spinner()
+                    .template("{prefix:>12.bright.yellow} {spinner}")
+                    .unwrap(),
+            );
             // ** we also remove the default /package from the tar returned by NPM**
             archive
                 .entries()
@@ -101,18 +115,39 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) {
                         std::fs::create_dir_all(parent_dir)
                             .expect("Failed to create parent directory");
                     }
+                    // let count: Result<u64, std::num::TryFromIntError> =
+                    //     arch_two.entries().unwrap().count().try_into();
+                    // let count =entry.co
+                    //  = archive.entries().unwrap();
 
+                    // let count: Result<u64, std::num::TryFromIntError> =
+                    //     arch_two.entries().unwrap().count().try_into();
+                    ext_bar.set_style(
+                        indicatif::ProgressStyle::default_bar()
+                            .template("{prefix:>12.bright.green} {total_bytes} {eta}")
+                            .unwrap()
+                            .tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ ")
+                            .progress_chars("**"), // .tick_strings(&["#"]),
+                    );
+                    // ext_bar.tick();
+                    let size = entry.header().size().unwrap();
+                    ext_bar.set_length(size);
                     // Unpack the entry to the adjusted destination path
                     entry
                         .unpack(&dest_path)
                         .expect("Failed to unpack tar entry");
+                    // ext_bar.wrap_read(unpack);
+                    // pack.r
+                    // unpack.
                 });
 
             // Cleanup: Remove the temporary tar file
             std::fs::remove_file("./node_tests/node_modules/temp.tar.gz")
                 .expect("Failed to remove temp file");
-            let message = format!("{} has been successfully downloaded", package_name);
-            console::show_success(message)
+            // let message = format!("{} has been successfully downloaded ✅ \n", package_name);
+            // console::show_info(message);
+            ext_bar.finish_with_message("unpack done")
+
             // println!("Tar file has been successfully downloaded and unpacked.");
         }
         // Err(Error::Status(_code, _response)) => {
@@ -120,7 +155,6 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) {
         //     code (such as 400, 500 etc) */
         //     eprint!("Error code from the server");
         // }
-
         // match ureq::get(url).call() {
         Err(Status(503, r)) | Err(Status(429, r)) => {
             for _ in 1..4 {
@@ -130,12 +164,11 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) {
                 thread::sleep(Duration::from_secs(retry));
             }
         }
-
         // };
         Err(_) => {
             /* some kind of io/transport error */
             eprintln!("Failed please check your connection");
-            extract_tarball_to_disk(url, package_name)
+            // extract_tarball_to_disk(url, package_name);
         }
     }
 }

@@ -43,7 +43,7 @@ pub fn resolve_package_from_registry(dep: String, update: bool) {
             //create or update dep
             filesystem::update_package_jason_dep(res_package, update).unwrap();
             //resolve next dependency
-            resolve_next_dep(name);
+            resolve_next_dep(name.clone());
         }
         //semvar string has been passed
         _ => {
@@ -51,9 +51,9 @@ pub fn resolve_package_from_registry(dep: String, update: bool) {
             // let message = format!("Querying NPM for {}", name);
             // console::show_success(message);
             // call package installer with semvar version
-            let install_db = package_installer(name, version);
-            filesystem::generate_lock_file(install_db).unwrap(); //also updates/creates dep in package.json
-                                                                 //semver as version
+            let install_db = package_installer(name.clone(), version);
+            filesystem::generate_lock_file(install_db).unwrap(); //also updates/creates dep in package.json                                     //semver as version
+            resolve_next_dep(name);
         }
     }
 }
@@ -80,15 +80,15 @@ fn package_installer(name: String, version: String) -> HashMap<String, Value> {
 //fetch next dep after instalation of package
 //to resolve the next dependancies
 fn resolve_next_dep(name: String) {
-    let mut path_name = format!("./node_tests/node_modules/{}/package.json", name);
-    let dir_name: String = format!("./node_tests/node_modules/{}", name);
+    let path_name = format!("./node_tests/node_modules/{}/package.json", name);
+    // let dir_name: String = format!("./node_tests/node_modules/{}", name);
     //check if pathname above exists
-    if !Path::new(path_name.as_str()).exists() {
-        // expect("Failed to create destination folder");
-        utils::visit_dir(dir_name.clone()).unwrap();
-        // handle the headache
-        path_name = dir_name;
-    }
+    // if !Path::new(path_name.as_str()).exists() {
+    //     // expect("Failed to create destination folder");
+    //     utils::visit_dir(dir_name.clone()).unwrap();
+    //     // handle the headache
+    //     path_name = dir_name;
+    // }
     // let file = fs::File::open(path_name).unwrap();
     let file = fs::File::options()
         .read(true)

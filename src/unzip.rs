@@ -122,19 +122,12 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) {
                     entry
                         .unpack(&dest_path)
                         .expect("Failed to unpack tar entry");
-                    // ext_bar.wrap_read(unpack);
-                    // pack.r
-                    // unpack.
+                    ext_bar.finish_with_message("unpack done")
                 });
 
             // Cleanup: Remove the temporary tar file
             std::fs::remove_file("./node_tests/node_modules/temp.tar.gz")
                 .expect("Failed to remove temp file");
-            // let message = format!("{} has been successfully downloaded ✅ \n", package_name);
-            // console::show_info(message);
-            ext_bar.finish_with_message("unpack done")
-
-            // println!("Tar file has been successfully downloaded and unpacked.");
         }
         // Err(Error::Status(_code, _response)) => {
         //     /* the server returned an unexpected status

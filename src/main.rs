@@ -1,25 +1,20 @@
 // use clap::builder::Str;
-use clap::Error;
+// use clap::Error;
+mod filesystem;
 mod http;
 mod init;
 mod semvar;
 mod unzip;
 mod utils;
-use serde_json::json;
+// use serde_json::json;
 use std::collections::BTreeMap;
 mod console;
-use std::path::Path;
-// use std::fmt::{self};
-// use std::collections::HashMap;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
-use std::fs::OpenOptions;
-use std::io;
-// use std::io::copy;
-// use std::io::Read;
-use std::io::{BufReader, BufWriter, Write};
+use std::io::BufReader;
+use std::path::Path;
 // use std::path;
 fn main() {
     //TODO: Get cli args first and add to vector
@@ -37,10 +32,10 @@ fn main() {
         //handle the add command
         "add" => {
             let dep = secondary_arg.expect("Provide a valid dependancy");
-            resolve_package_from_registry(dep.to_string());
+            //pass true to update the package.json with direct dependencies
+            resolve_package_from_registry(dep.to_string(), true);
             //read the package.json of installed dep to get the next one
-            //
-            resolve_next_dep(dep.to_string());
+            // resolve_next_dep(dep.to_string());
             // println!("{:?}", dep);
         }
         // install all dep in current package.json file
@@ -54,7 +49,8 @@ fn main() {
 //then add the package version to the prev created json! metadata appending `dependency` with `version`
 // proceed to generate a lock file with
 //also parse semver version if provided but i'll start
-fn resolve_package_from_registry(dep: String) {
+fn resolve_package_from_registry(dep: String, update: bool) {
+    //get required values from the string
     let (name, version) = semvar::split_package_version(&dep);
     // println!("package is {}, and the version is {}", name, version);
     match version.as_ref() {
@@ -62,9 +58,15 @@ fn resolve_package_from_registry(dep: String) {
             // let message = format!("Querying NPM for {}", name);
             // console::show_success(message);
             // call package installer
-            let install_db = package_installer(name, version);
+            let package_metadata = package_installer(name.clone(), version);
             //create a lock file and update package.json dependancies
-            generate_lock_file(install_db).unwrap(); //also updates/creates dep in package.json
+            //use the values returned to update package.json
+            let res_package = filesystem::generate_lock_file(package_metadata).unwrap();
+            //also updates/creates dep in package.json
+            //create or update dep
+            filesystem::update_package_jason_dep(res_package, update).unwrap();
+            //resolve next dependency
+            resolve_next_dep(name);
         }
         //semvar string has been passed
         _ => {
@@ -73,8 +75,8 @@ fn resolve_package_from_registry(dep: String) {
             // console::show_success(message);
             // call package installer with semvar version
             let install_db = package_installer(name, version);
-            generate_lock_file(install_db).unwrap(); //also updates/creates dep in package.json
-                                                     //semver as version
+            filesystem::generate_lock_file(install_db).unwrap(); //also updates/creates dep in package.json
+                                                                 //semver as version
         }
     }
 }
@@ -97,167 +99,7 @@ fn package_installer(name: String, version: String) -> HashMap<String, Value> {
     unzip::extract_tarball_to_disk(tarball.as_str().unwrap(), name.as_str().unwrap());
     resolved
 }
-//Generate lock files with package name,version,resolve url, and integrity checksum
-fn generate_lock_file(package: HashMap<String, Value>) -> Result<(), Error> {
-    //model lock content
-    struct LockFile {
-        name: String,
-        version: String,
-        resolved: String,
-        integrity: String,
-    }
-    //formatter function returns placeholders without double quotes around the name, version, resolved, and integrity
-    impl LockFile {
-        fn format_for_lock_file(&self) -> String {
-            format!(
-                "\n \n {}@{}:\n version {}\n  resolved {}\n  integrity {}",
-                self.name, self.version, self.version, self.resolved, self.integrity
-            )
-        }
-    }
-    //get required values from hashmap
-    let dist = package.get("dist").unwrap();
-    let version = package.get("version").unwrap();
-    let tarball = dist.get("tarball").unwrap();
-    let integrity = dist.get("integrity").unwrap();
-    let name = package.get("name").unwrap();
-    //create a lock file with fs package and write to it
-    let mut path_name = format!("./node_tests/tyr.lock");
-    // fs::File::create(path)
-    let mut file = OpenOptions::new()
-        .append(true)
-        .create(true)
-        .open(&mut path_name)
-        .expect("failed to create a package.lock file");
-    //construct a new lock object with package metadata
-    let lock = LockFile {
-        name: name.to_string(),
-        version: version.to_string(),
-        integrity: integrity.to_string(),
-        resolved: tarball.to_string(),
-    };
-    // let formatted = lock.format_for_lock_file();
-    write!(file, "{}", &lock.format_for_lock_file())?;
-    // println!("Saved lockfile");
-    update_package_jason_dep(package).unwrap();
 
-    Ok(())
-}
-//function to update dependancy packages after installation
-//first model the dep struct and package struct
-fn update_package_jason_dep(package: HashMap<String, Value>) -> io::Result<()> {
-    //read contents of the file
-    let path_name = format!("./node_tests/package.json");
-    let file = fs::File::open(path_name).unwrap();
-    let reader = BufReader::new(file);
-    //
-    let update = true;
-    // Read the JSON contents of the file and assign to Hashmap.
-    let json_file_data: BTreeMap<String, Value> = serde_json::from_reader(reader)?;
-
-    let version: String = package
-        .get("version")
-        .unwrap()
-        .to_string()
-        .trim_matches('"')
-        .trim_matches('~')
-        .parse()
-        .unwrap();
-    let name: String = package
-        .get("name")
-        .unwrap()
-        .to_string()
-        .trim_matches('"')
-        .parse()
-        .unwrap();
-    let is_dep_init = json_file_data.contains_key("dependencies");
-
-    match is_dep_init {
-        true => {
-            // println!("Dep object detected we should append to json");
-            //update the dep object with installed package metadata
-            update_dep_obj(json_file_data, name.clone(), version, update).unwrap();
-            resolve_next_dep(name.to_string());
-            // println!("maybe read {} package and see", name);
-        }
-        false => {
-            println!("Dep object not found we should create then add");
-            // probably the first package
-            create_dep_obj(json_file_data, name, version).unwrap();
-        }
-    }
-    // println!("is dependencies initiated in project {:?}", is_dep_init);
-    Ok(())
-}
-// create dep object on the package.json file with new package metadata
-fn create_dep_obj(
-    mut metadata: BTreeMap<String, Value>,
-    name: String,
-    version: String,
-) -> io::Result<()> {
-    // create the json value with serde
-    let value = json!({
-        "dependencies": {
-            name:version
-        }
-    });
-    // metadata.insert(k, v)
-    let dep_value: BTreeMap<String, Value> = serde_json::from_value(value).unwrap();
-    //merge the 2 data structures
-    metadata.extend(dep_value);
-    let result = json!(metadata);
-    let mut path_name = format!("./node_tests/package.json");
-    let file = fs::File::create(&mut path_name).expect("failed to create a package.json file");
-    // write to package.json file
-    let mut writer = BufWriter::new(file);
-    // fs::write(&mut path_name, b"Lorem ipsum").expect("failed to write to package.json file");
-    serde_json::to_writer_pretty(&mut writer, &result)?;
-    writer.flush()?;
-    Ok(())
-}
-//update the dependency object
-// static mut update_dep: bool = true;
-
-fn update_dep_obj(
-    mut metadata: BTreeMap<String, Value>,
-    name: String,
-    version: String,
-    mut update: bool,
-) -> io::Result<()> {
-    //check if we need to update dependencies
-    match update {
-        true => {
-            // create the json value with serde
-            let current_dep: Value = metadata.get_mut("dependencies").unwrap().clone();
-            //append installed package meta on the current_dep value
-            let mut temp_json: HashMap<String, String> =
-                serde_json::from_value(current_dep).unwrap();
-            temp_json.insert(name, version);
-            //update package.json instance with new dependancies
-            if let Some(x) = metadata.get_mut("dependencies") {
-                *x = json!(temp_json);
-            };
-            // println!("metadata {:?}", metadata);
-            //write output to file
-            //serialize first
-            let results = json!(metadata);
-            let mut path_name = format!("./node_tests/package.json");
-            let file =
-                fs::File::create(&mut path_name).expect("failed to create a package.json file");
-            let mut writer = BufWriter::new(file);
-            serde_json::to_writer_pretty(&mut writer, &results)?;
-            //
-            let is_update = false;
-            update = is_update;
-            println!("update {}", update);
-            Ok(())
-        }
-        false => {
-            println!("not updating dep");
-            Ok(())
-        }
-    }
-}
 //fetch next dep after instalation of package
 //to resolve the next dependancies
 fn resolve_next_dep(name: String) {
@@ -284,16 +126,13 @@ fn resolve_next_dep(name: String) {
             let next_dep: Value = json_file_data.get_mut("dependencies").unwrap().clone();
             let temp_json: HashMap<String, String> = serde_json::from_value(next_dep).unwrap();
             let it = temp_json.iter();
-            // let string_name=String
-            // println!("**** The next package is {:?}", temp_json);
-            //parse the values before calling install
             //check if theres dep
             match temp_json.is_empty() {
                 true => {
                     // print!("********  no more dependencies *********");
-                    // let message = format!("Done 👍🏾");
+                    let message = format!("Done ** ** 👍🏾");
                     // println!("****** installing the next one {:?}", package_name);
-                    // console::show_info(message);
+                    console::show_info(message);
                 }
                 false => {
                     // println!("{:?}", it);
@@ -308,7 +147,8 @@ fn resolve_next_dep(name: String) {
                         // let message = format!("Installing *** {}", package_name);
                         // println!("****** installing the next one {:?}", package_name);
                         // console::show_info(message);
-                        resolve_package_from_registry(package_name.to_string());
+                        //pass false to prevent updating package json with resolved dep
+                        resolve_package_from_registry(package_name.to_string(), false);
                     }
                     //format the map values to stringproceeding to install
                 }
@@ -317,7 +157,7 @@ fn resolve_next_dep(name: String) {
         //package.json does not contain dependency field
         false => {
             // println!("No dependencies in package")
-            let message = format!("Done 👍🏾");
+            let message = format!("Done ****👍🏾");
             // println!("****** installing the next one {:?}", package_name);
             console::show_info(message);
         }

@@ -80,15 +80,15 @@ fn package_installer(name: String, version: String) -> HashMap<String, Value> {
 //fetch next dep after instalation of package
 //to resolve the next dependancies
 fn resolve_next_dep(name: String) {
-    let path_name = format!("./node_tests/node_modules/{}/package.json", name);
-    // let dir_name: String = format!("./node_tests/node_modules/{}", name);
-    //check if pathname above exists
-    // if !Path::new(path_name.as_str()).exists() {
-    //     // expect("Failed to create destination folder");
-    //     utils::visit_dir(dir_name.clone()).unwrap();
-    //     // handle the headache
-    //     path_name = dir_name;
-    // }
+    let mut path_name = format!("./node_tests/node_modules/{}/package.json", name);
+    let dir_name: String = format!("./node_tests/node_modules/{}", name);
+    // check if pathname above exists
+    if !Path::new(path_name.as_str()).exists() {
+        // expect("Failed to create destination folder");
+        utils::visit_dir(dir_name.clone()).unwrap();
+        // handle the headache
+        path_name = dir_name;
+    }
     // let file = fs::File::open(path_name).unwrap();
     let file = fs::File::options()
         .read(true)

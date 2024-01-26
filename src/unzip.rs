@@ -5,10 +5,10 @@ use std::fs;
 use std::io::{copy, BufReader};
 use std::path::{Path, PathBuf};
 //import console create
-use crate::console;
+// use crate::console;
 use tar::Archive;
 // use ureq;
-use indicatif::{HumanBytes, HumanCount, HumanDuration, HumanFloatCount};
+// use indicatif::{HumanBytes, HumanCount, HumanDuration, HumanFloatCount};
 use std::{thread, time::Duration};
 use ureq::Error::Status;
 use ureq::{Agent, AgentBuilder};
@@ -81,13 +81,6 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) {
             let tar_reader = BufReader::new(GzDecoder::new(tar_file));
             // Create a tar archive from the file
             let mut archive = Archive::new(tar_reader);
-            // let arch_two = &mut archive;
-            // Extract the contents of the tar file to the custom project folder
-            // for entry in archive.entries()? {
-            //     entry?.unpack_in(".")?;
-            //     let pos = tar_file.seek(SeekFrom::Current(0))?;
-            // }
-
             //show progress update on this
             //extraction bar
             let ext_bar = ProgressBar::new(!0).with_prefix("Unpacking: ").with_style(
@@ -115,13 +108,6 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) {
                         std::fs::create_dir_all(parent_dir)
                             .expect("Failed to create parent directory");
                     }
-                    // let count: Result<u64, std::num::TryFromIntError> =
-                    //     arch_two.entries().unwrap().count().try_into();
-                    // let count =entry.co
-                    //  = archive.entries().unwrap();
-
-                    // let count: Result<u64, std::num::TryFromIntError> =
-                    //     arch_two.entries().unwrap().count().try_into();
                     ext_bar.set_style(
                         indicatif::ProgressStyle::default_bar()
                             .template("{prefix:>12.bright.green} {total_bytes} {eta}")

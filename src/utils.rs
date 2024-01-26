@@ -1,7 +1,7 @@
 // utility functions
-use std::fs::{self, DirEntry};
+use std::fs;
 use std::io;
-use std::path::Path;
+// use std::path::Path;
 //helper function that walks  a directory
 // one possible implementation of walking a directory only visiting files
 // use std::{fs, io};

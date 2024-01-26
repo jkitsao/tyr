@@ -1,5 +1,6 @@
 // use clap::builder::Str;
 // use clap::Error;
+mod cli;
 mod filesystem;
 mod http;
 mod init;
@@ -11,45 +12,21 @@ use std::collections::BTreeMap;
 mod console;
 use serde_json::Value;
 use std::collections::HashMap;
-use std::env;
+// use std::env;
 use std::fs;
 use std::io::BufReader;
 use std::path::Path;
 // use std::path;
 fn main() {
-    //TODO: Get cli args first and add to vector
-    let args: Vec<String> = env::args().collect();
-    let _def_arg = String::from(&args[1]);
-    let primary_arg = &args[2];
-    //secondary args depends on primary (used for dependancies)
-    let secondary_arg = args.get(3);
-    // dbg!(def_arg, primary_arg);
-    // dbg!(args);
-    //first match the primary for either init or add
-    match primary_arg.as_ref() {
-        //init command:
-        "init" => init::init_new_project(),
-        //handle the add command
-        "add" => {
-            let dep = secondary_arg.expect("Provide a valid dependancy");
-            //pass true to update the package.json with direct dependencies
-            resolve_package_from_registry(dep.to_string(), true);
-            //read the package.json of installed dep to get the next one
-            // resolve_next_dep(dep.to_string());
-            // println!("{:?}", dep);
-        }
-        // install all dep in current package.json file
-        "install" => println!("proceed to installing dependencies"),
-        "tyr" => println!("proceed to installing dependencies"),
-        _ => println!("nothing special"),
-    };
+    // cli::get_args();
+    cli::initialize_command_arguments()
 }
 //resolve dependancy/impl add command
 //first step is to download the passed dep(is-even) from npm to a node_modules folder
 //then add the package version to the prev created json! metadata appending `dependency` with `version`
 // proceed to generate a lock file with
 //also parse semver version if provided but i'll start
-fn resolve_package_from_registry(dep: String, update: bool) {
+pub fn resolve_package_from_registry(dep: String, update: bool) {
     //get required values from the string
     let (name, version) = semvar::split_package_version(&dep);
     // println!("package is {}, and the version is {}", name, version);
@@ -59,9 +36,9 @@ fn resolve_package_from_registry(dep: String, update: bool) {
             // console::show_success(message);
             // call package installer
             let package_metadata = package_installer(name.clone(), version);
-            //create a lock file and update package.json dependancies
-            //use the values returned to update package.json
+            //create/update a lock file
             let res_package = filesystem::generate_lock_file(package_metadata).unwrap();
+            //use the values returned to update package.json
             //also updates/creates dep in package.json
             //create or update dep
             filesystem::update_package_jason_dep(res_package, update).unwrap();

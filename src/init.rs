@@ -45,9 +45,8 @@ impl Project {
 }
 //handle project initialization
 
-pub fn init_new_project() {
+pub fn init_new_project(name: String) {
     // cache required variables
-    let mut name = String::new();
     let mut version = String::new();
     let mut description = String::new();
     let mut entry_point = String::new();
@@ -57,10 +56,10 @@ pub fn init_new_project() {
     let mut private_input = String::new();
     let private = true;
     //get name of project
-    println!("Enter the name of your project ");
-    io::stdin()
-        .read_line(&mut name)
-        .expect("Please enter a valid project name");
+    // println!("Enter the name of your project ");
+    // io::stdin()
+    //     .read_line(&mut name)
+    //     .expect("Please enter a valid project name");
     // println!("create a project called {}", name);
     //get project version
     println!("Version");

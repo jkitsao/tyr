@@ -1,5 +1,5 @@
 //handle scripts in package.json
-fn parse_package_json(package_json_content: &str) -> Result<Value, serde_json::Error> {
+pub fn parse_package_json(package_json_content: &str) -> Result<Value, serde_json::Error> {
     let path_name = format!("./node_tests/package.json");
     let file = fs::File::open(path_name).unwrap();
     let reader = BufReader::new(file);

@@ -111,7 +111,7 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) {
                     let size = entry.header().entry_size().unwrap();
                     ext_bar.set_style(
                         indicatif::ProgressStyle::default_bar()
-                            .template("{prefix:>12.bright.blue} {bar:5} [{elapsed_precise}]")
+                            .template("{prefix:>12.bright.cyan} {elapsed_precise}")
                             .unwrap()
                             .tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ ")
                             .progress_chars("**"), // .tick_strings(&["#"]),

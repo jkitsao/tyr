@@ -62,8 +62,8 @@ pub fn resolve_package_from_registry(dep: String, update: bool) {
             const CLIP: Emoji<'_, '_> = Emoji("🔗  ", "");
             println!(
                 "{} {}",
-                style("***** peer dependencies").bold().yellow(),
-                CLIP
+                CLIP,
+                style("peer dependency").italic().bright().green()
             );
             //resolve next dependency
             resolve_next_dep(name.clone());
@@ -77,7 +77,11 @@ pub fn resolve_package_from_registry(dep: String, update: bool) {
             let install_db = package_installer(name.clone(), version);
             filesystem::generate_lock_file(install_db).unwrap(); //also updates/creates dep in package.json
             const CLIP: Emoji<'_, '_> = Emoji("🔗  ", "");
-            println!("{} {}", style("**** peer dependencies").bold().blue(), CLIP); //semver as version
+            println!(
+                "{} {}",
+                CLIP,
+                style("peer dependency").italic().bright().green()
+            ); //semver as version
             resolve_next_dep(name);
         }
     }
@@ -115,60 +119,64 @@ fn resolve_next_dep(name: String) {
     let mut path_name = format!("./node_tests/node_modules/{}/package.json", name);
     let dir_name: String = format!("./node_tests/node_modules/{}", name);
     // check if pathname above exists
+    // some packages i.e busboy come with an extra directory in the root
+    // in which case read the extra directory to get package.json
     if !Path::new(path_name.as_str()).exists() {
         // expect("Failed to create destination folder");
-        utils::visit_dir(dir_name.clone()).unwrap();
+        let new_path = utils::visit_dir(dir_name.clone()).unwrap();
+        let read_path = format!("{}/package.json", new_path);
         // handle the headache
-        path_name = dir_name;
-    }
-    // let file = fs::File::open(path_name).unwrap();
-    let file = fs::File::options()
-        .read(true)
-        .open(path_name)
-        .expect("failed to create file");
-    let reader = BufReader::new(file);
-    // Read the JSON contents of the file and assign to Hashmap.
-    let mut json_file_data: BTreeMap<String, Value> = serde_json::from_reader(reader).unwrap();
-    //match to check id dep is available
-    match json_file_data.contains_key("dependencies") {
-        true => {
-            let next_dep: Value = json_file_data.get_mut("dependencies").unwrap().clone();
-            let temp_json: HashMap<String, String> = serde_json::from_value(next_dep).unwrap();
-            let it = temp_json.iter();
-            //check if theres dep
-            match temp_json.is_empty() {
-                true => {
-                    // print!("********  no more dependencies *********");
-                    // let message = format!("Done ** ** 👍🏾");
-                    // println!("****** installing the next one {:?}", package_name);
-                    // console::show_info(message);
-                }
-                false => {
-                    // println!("{:?}", it);
-                    // Iterate over the keys and values of the hashmap
-                    for (key, value) in it {
-                        // Remove backticks from the value
-                        let new_value = value.replace('^', "");
-                        // println!("Key: {}, Value: {}", key, value);
-                        let package_name = format!("{}@{}", key, new_value);
-                        // println!("{}", package_name);
-                        //
-                        // let message = format!("Installing *** {}", package_name);
+        path_name = read_path
+    } else {
+        // let file = fs::File::open(path_name).unwrap();
+        let file = fs::File::options()
+            .read(true)
+            .open(path_name)
+            .expect("failed to create file");
+        let reader = BufReader::new(file);
+        // Read the JSON contents of the file and assign to Hashmap.
+        let mut json_file_data: BTreeMap<String, Value> = serde_json::from_reader(reader).unwrap();
+        //match to check id dep is available
+        match json_file_data.contains_key("dependencies") {
+            true => {
+                let next_dep: Value = json_file_data.get_mut("dependencies").unwrap().clone();
+                let temp_json: HashMap<String, String> = serde_json::from_value(next_dep).unwrap();
+                let it = temp_json.iter();
+                //check if theres dep
+                match temp_json.is_empty() {
+                    true => {
+                        // print!("********  no more dependencies *********");
+                        // let message = format!("Done ** ** 👍🏾");
                         // println!("****** installing the next one {:?}", package_name);
                         // console::show_info(message);
-                        //pass false to prevent updating package json with resolved dep
-                        resolve_package_from_registry(package_name.to_string(), false);
                     }
-                    //format the map values to stringproceeding to install
+                    false => {
+                        // println!("{:?}", it);
+                        // Iterate over the keys and values of the hashmap
+                        for (key, value) in it {
+                            // Remove backticks from the value
+                            let new_value = value.replace('^', "");
+                            // println!("Key: {}, Value: {}", key, value);
+                            let package_name = format!("{}@{}", key, new_value);
+                            // println!("{}", package_name);
+                            //
+                            // let message = format!("Installing *** {}", package_name);
+                            // println!("****** installing the next one {:?}", package_name);
+                            // console::show_info(message);
+                            //pass false to prevent updating package json with resolved dep
+                            resolve_package_from_registry(package_name.to_string(), false);
+                        }
+                        //format the map values to stringproceeding to install
+                    }
                 }
             }
-        }
-        //package.json does not contain dependency field
-        false => {
-            // println!("No dependencies in package")
-            // let message = format!("Done ****👍🏾");
-            // println!("****** installing the next one {:?}", package_name);
-            // console::show_info(message);
+            //package.json does not contain dependency field
+            false => {
+                // println!("No dependencies in package")
+                // let message = format!("Done ****👍🏾");
+                // println!("****** installing the next one {:?}", package_name);
+                // console::show_info(message);
+            }
         }
     }
 

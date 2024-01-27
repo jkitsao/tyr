@@ -16,9 +16,9 @@ pub fn visit_dir(path_name: String) -> io::Result<String> {
     // ordering is required the entries should be explicitly sorted.
 
     entries.sort();
-    let new_entry: Vec<PathBuf> = entries.to_vec();
-    println!("entries {:?}", entries);
-    let f = new_entry[0].to_str().unwrap();
+    let paths: Vec<PathBuf> = entries.to_vec();
+    // println!("entries {:?}", entries);
+    let f = paths[0].to_str().unwrap();
     let file = String::from(f);
     // The entries have now been sorted by their path.
     Ok(file)

@@ -1,28 +1,60 @@
-# tyr
+<img src="https://static.wikia.nocookie.net/godofwar/images/e/e3/Fj1v1EXaAAA6H7Y.jpeg/revision/latest/scale-to-width-down/1000?cb=20230107133419" height="300" width="700"/>
 
-### Simple package manager for Javascript
+# Tyr - A Node.js Package Manager Written in Rust
 
-# Milestone 1: Basic CLI Setup
+Tyr is a lightweight, fast, and reliable package manager for Node.js projects, implemented in Rust. It aims to provide efficient dependency management, project initialization, and package installation workflows.
 
-Set up a basic command-line interface using a library like [clap](https://docs.rs/clap/latest/clap/).
-Implement the init command to create a basic `package.json` file.
+## Running from Source
 
-Switched from [clap](https://docs.rs/clap/latest/clap/) to `std::io` for basic CLI argument parsing.
+To run Tyr from the source code on GitHub, ensure that you have Rust installed. You can install Rust by following the instructions on the [official website](https://www.rust-lang.org/tools/install).
 
-Command `tyr init` is now supported for initializing a new project
+Clone the repository:
 
-This command walks you through an interactive session to create a package.json file. Some defaults such as the license and initial version are found in yarn’s init-\* config settings.
+```sh
+git clone https://github.com/jkitsao/tyr.git
+```
 
-# Milestone 2: Add Command
+Navigate to the project directory:
 
-Implement the `add` command to fetch and add packages to the project.
-Support basic dependency resolution.
+```sh
+cd tyr
+```
 
-In general, a package is simply a folder with code and a package.json file that describes the contents. When you want to use another package, you first need to add it to your dependencies. This means running yarn add [package-name] to install it into your project.
+Run Tyr with Cargo:
 
-This will also update your package.json and your yarn.lock/package.lock so that other developers working on the project will get the same dependencies as you when they run `install` command.
+```sh
+cargo run <command>
+```
 
-# Milestone 3: Improved Dependency Resolution
+Replace <command> with one of the supported commands, such as init, add, etc.
 
-Enhance the dependency resolution algorithm.
-Handle version constraints and dependencies' metadata
+# Features
+
+- **`init`:** Command: Initialize a new Node.js project with a basic project structure and configuration.
+- **`add`** Command: Fetch new packages from npm and
+  generate a lock file `tyr.lock` to ensure reproducible builds.
+- **`install`** Command: Work in progress. Install dependencies specified in the tyr.lock file.
+
+# Roadmap
+
+## Minimum Viable Product (MVP)
+
+- `Init` Command: Initialize a new Node.js project with a basic project structure and a package.json file.
+- `Add` Command: Fetch dependencies from npm and update the package.json file.
+- `Lock File Generation:` Create a lock file (tyr.lock) to track dependency versions.
+- `Dependency Resolution:` Ensure consistent dependency versions across different environments.
+- `Install Command:` Install dependencies specified in the tyr.lock file.
+
+# Additional Features
+
+- `Dependency Management:` Support for updating, removing, and listing dependencies.
+- `Script Execution:` Ability to execute scripts defined in the package.json file.
+- `Registry Support:` Allow configuring custom registries for package installation.
+- `Concurrency:` Parallel dependency resolution and installation for faster performance.
+- `Versioning:` Semantic versioning support for package management and updates.
+
+⚠️ **Warning: Do Not Use in Production**
+
+Tyr is currently in early development and may not be suitable for use in production environments. Use it at your own risk.
+
+---

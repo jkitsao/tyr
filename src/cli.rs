@@ -1,4 +1,5 @@
 use crate::init;
+use crate::install;
 use crate::resolve_package_from_registry;
 use clap::{Parser, Subcommand};
 /// A fictional versioning CLI
@@ -35,7 +36,7 @@ pub fn initialize_command_arguments() {
         Commands::Add { packages } => {
             //loop over packages and install each
             for package in packages.iter() {
-                println!("Resolving: {}", package);
+                // println!("Resolving: {}", package);
                 resolve_package_from_registry(package.to_owned(), true)
             }
         }
@@ -44,7 +45,9 @@ pub fn initialize_command_arguments() {
             init::init_new_project(name);
         }
         Commands::Install => {
-            println!("Installing Dependencies")
+            println!("Installing Dependencies");
+            let lockfile_path = "./node_tests/tyr.lock";
+            install::load_entries_from_lockfile(lockfile_path)
         }
     }
 }

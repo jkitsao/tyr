@@ -108,15 +108,15 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) {
                         std::fs::create_dir_all(parent_dir)
                             .expect("Failed to create parent directory");
                     }
+                    let size = entry.header().entry_size().unwrap();
                     ext_bar.set_style(
                         indicatif::ProgressStyle::default_bar()
-                            .template("{prefix:>12.bright.green} {total_bytes} {eta}")
+                            .template("{prefix:>12.bright.blue} {bar:5} [{elapsed_precise}]")
                             .unwrap()
                             .tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ ")
                             .progress_chars("**"), // .tick_strings(&["#"]),
                     );
                     // ext_bar.tick();
-                    let size = entry.header().size().unwrap();
                     ext_bar.set_length(size);
                     // Unpack the entry to the adjusted destination path
                     entry

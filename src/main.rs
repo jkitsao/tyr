@@ -4,22 +4,34 @@ mod cli;
 mod filesystem;
 mod http;
 mod init;
+mod install;
 mod semvar;
 mod unzip;
 mod utils;
 // use serde_json::json;
 use std::collections::BTreeMap;
-mod console;
+mod reconsole;
 use serde_json::Value;
 use std::collections::HashMap;
 // use std::env;
+use console::{style, Emoji};
+use indicatif::HumanDuration;
 use std::fs;
 use std::io::BufReader;
 use std::path::Path;
+use std::time::Instant;
 // use std::path;
+//for printing to the screen
+static LOOKING_GLASS: Emoji<'_, '_> = Emoji("🔍  ", "");
+static TRUCK: Emoji<'_, '_> = Emoji("🚚  ", "");
+static _CLIP: Emoji<'_, '_> = Emoji("🔗  ", "");
+static _PAPER: Emoji<'_, '_> = Emoji("📃  ", "");
+static SPARKLE: Emoji<'_, '_> = Emoji("✨ ", ":-)");
 fn main() {
     // cli::get_args();
-    cli::initialize_command_arguments()
+    let started = Instant::now();
+    cli::initialize_command_arguments();
+    println!("{} Done in {}", SPARKLE, HumanDuration(started.elapsed()));
 }
 //resolve dependancy/impl add command
 //first step is to download the passed dep(is-even) from npm to a node_modules folder
@@ -35,6 +47,11 @@ pub fn resolve_package_from_registry(dep: String, update: bool) {
             // let message = format!("Querying NPM for {}", name);
             // console::show_success(message);
             // call package installer
+            println!(
+                "{} {}Resolving packages...",
+                style("[1/4]").bold().dim(),
+                LOOKING_GLASS
+            );
             let package_metadata = package_installer(name.clone(), version);
             //create/update a lock file
             let res_package = filesystem::generate_lock_file(package_metadata).unwrap();
@@ -42,6 +59,12 @@ pub fn resolve_package_from_registry(dep: String, update: bool) {
             //also updates/creates dep in package.json
             //create or update dep
             filesystem::update_package_jason_dep(res_package, update).unwrap();
+            const CLIP: Emoji<'_, '_> = Emoji("🔗  ", "");
+            println!(
+                "{} {}",
+                style("***** peer dependencies").bold().yellow(),
+                CLIP
+            );
             //resolve next dependency
             resolve_next_dep(name.clone());
         }
@@ -52,7 +75,9 @@ pub fn resolve_package_from_registry(dep: String, update: bool) {
             // console::show_success(message);
             // call package installer with semvar version
             let install_db = package_installer(name.clone(), version);
-            filesystem::generate_lock_file(install_db).unwrap(); //also updates/creates dep in package.json                                     //semver as version
+            filesystem::generate_lock_file(install_db).unwrap(); //also updates/creates dep in package.json
+            const CLIP: Emoji<'_, '_> = Emoji("🔗  ", "");
+            println!("{} {}", style("**** peer dependencies").bold().blue(), CLIP); //semver as version
             resolve_next_dep(name);
         }
     }
@@ -71,8 +96,15 @@ fn package_installer(name: String, version: String) -> HashMap<String, Value> {
     let name = resolved.get("name").unwrap();
     // println!("the tar is {:?} and version is {:?}", tarball, version);
     // println!("proceeding to install {}  version {}", name, version);
-    let message = format!("Installing {}@{}", name, version);
-    console::show_info(message);
+    // let message = format!("Installing {}@{}", name, version);
+    // console::show_info(message);
+    println!(
+        "{} {}Fetching {}@{}",
+        style("[2/4]").bold().dim(),
+        TRUCK,
+        &name,
+        version
+    );
     unzip::extract_tarball_to_disk(tarball.as_str().unwrap(), name.as_str().unwrap());
     resolved
 }
@@ -107,9 +139,9 @@ fn resolve_next_dep(name: String) {
             match temp_json.is_empty() {
                 true => {
                     // print!("********  no more dependencies *********");
-                    let message = format!("Done ** ** 👍🏾");
+                    // let message = format!("Done ** ** 👍🏾");
                     // println!("****** installing the next one {:?}", package_name);
-                    console::show_info(message);
+                    // console::show_info(message);
                 }
                 false => {
                     // println!("{:?}", it);
@@ -134,9 +166,9 @@ fn resolve_next_dep(name: String) {
         //package.json does not contain dependency field
         false => {
             // println!("No dependencies in package")
-            let message = format!("Done ****👍🏾");
+            // let message = format!("Done ****👍🏾");
             // println!("****** installing the next one {:?}", package_name);
-            console::show_info(message);
+            // console::show_info(message);
         }
     }
 

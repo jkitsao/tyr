@@ -7,9 +7,12 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.4.18", features = ["derive", "cargo"] }
+console = "0.15.8"
 dialoguer = "0.11.0"
 flate2 = "1.0.28"
 indicatif = "0.17.7"
+is-even = "1.0.0"
+itertools = "0.12.0"
 nodejs-semver = "3.4.0"
 qndr = "0.1.7"
 regex = "1.10.3"
@@ -21,3 +24,4 @@ tar = "0.4.40"
 termcolor = "1.4.1"
 ureq = { version = "2.9.1", features = ["json", "charset"] }
 url = "2.5.0"
+yarn-lock-parser = "0.6.0"

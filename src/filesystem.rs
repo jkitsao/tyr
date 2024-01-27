@@ -22,10 +22,10 @@ pub fn generate_lock_file(
     }
     //formatter function returns placeholders without double quotes around the name, version, resolved, and integrity
     impl LockFile {
-        fn format_for_lock_file(&self) -> String {
+        fn format_for_lock_file(&self, name: String) -> String {
             format!(
-                "\n \n {}@{}:\n version {}\n  resolved {}\n  integrity {}",
-                self.name, self.version, self.version, self.resolved, self.integrity
+                "\n \n {}: \n version {}\n  resolved {}\n  integrity {}",
+                name, self.version, self.resolved, self.integrity
             )
         }
     }
@@ -45,13 +45,23 @@ pub fn generate_lock_file(
         .expect("failed to create a package.lock file");
     //construct a new lock object with package metadata
     let lock = LockFile {
-        name: name.to_string(),
-        version: version.to_string(),
+        name: name
+            .to_string()
+            .replace("\"", "")
+            .trim_matches('"')
+            .to_string(),
+        version: version
+            .to_string()
+            .replace("\"", "")
+            .trim_matches('"')
+            .to_string(),
         integrity: integrity.to_string(),
         resolved: tarball.to_string(),
     };
+    let name = format!("{}@{}", name, version);
+    let dep_name = combine_dependency_and_version(&name);
     // let formatted = lock.format_for_lock_file();
-    write!(file, "{}", &lock.format_for_lock_file())?;
+    write!(file, "{}", &lock.format_for_lock_file(dep_name))?;
     // println!("Saved lockfile");
     // update_package_jason_dep(package).unwrap();
 
@@ -93,7 +103,7 @@ pub fn update_package_jason_dep(package: HashMap<String, Value>, update: bool) -
             //update the dep object with installed package metadata
             update_dep_obj(json_file_data, name.clone(), version, update).unwrap();
             // resolve_next_dep(name.to_string());
-            println!("current boolean value {} ", update);
+            // println!("current boolean value {} ", update);
         }
         false => {
             println!("Dep object not found we should create then add");
@@ -167,5 +177,15 @@ fn update_dep_obj(
             println!("not updating dep");
             Ok("error".to_string())
         }
+    }
+}
+fn combine_dependency_and_version(input: &str) -> String {
+    let mut parts = input.splitn(2, '@'); // Split at the first '@'
+
+    if let (Some(name), Some(version)) = (parts.next(), parts.next()) {
+        format!("{}@{}", name.trim(), version.trim())
+    } else {
+        // Handle the case where there's no '@' or missing parts
+        input.to_string()
     }
 }

@@ -1,4 +1,4 @@
-use crate::console;
+use crate::reconsole;
 // use clap::error;
 // use indicatif::ProgressBar;
 use serde_json::Value;
@@ -18,7 +18,7 @@ pub fn resolve_remote_package(
     // console::show_info(message);
     let url_encoded_name: String = form_urlencoded::byte_serialize(name.as_bytes()).collect();
     let url = format!("{}/{}/{}", NPM_REGISTRY_URL, url_encoded_name, version);
-    println!("URL IS : {}", url);
+    // println!("URL IS : {}", url);
     let res = ureq::get(&url)
         .set(
             "ALLOW",
@@ -40,14 +40,14 @@ pub fn resolve_remote_package(
             let map: HashMap<String, Value> = serde_json::from_str(&text.as_ref()).unwrap();
             // eprintln!("Registry error code {:?} {:?}", code, text);
             // let error = String::from();
-            console::show_error(text);
+            reconsole::show_error(text);
             //return map with error values
             Ok(map)
         }
         Err(_) => {
             /* some kind of io/transport error */
             let error = String::from("Check your connection and try again");
-            console::show_error(error);
+            reconsole::show_error(error);
             // bar.finish();
             // let text = _.into_string().unwrap();
             // let map: HashMap<String, Value> = serde_json::from_str(&text.as_ref()).unwrap();

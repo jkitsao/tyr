@@ -127,13 +127,17 @@ jobs:
           cp "../target/${{ matrix.target }}/release/${bin}" "${node_pkg}/bin"
           # publish the package
           cd "${node_pkg}"
-          npm publish --access public --dry-run
+          #npm publish --access public
+          cat << EOF > ~/.npmrc
+          //registry.npmjs.org/:_authToken=${NPM_API_KEY}
+          EOF
+          chmod 0600 ~/.npmrc
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_API_KEY: ${{ secrets.NPM_TOKEN }}
 
   publish-npm-base:
     name: Publish the base NPM package
-    needs: [dist]
+    needs: dist
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout

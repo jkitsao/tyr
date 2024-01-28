@@ -9,7 +9,7 @@ on:
     ## - release
 
 env:
-  BIN_NAME: tyrbin
+  BIN_NAME: tyr
   PROJECT_NAME: tyr
   REPO_NAME: jkitsao/tyr
   BREW_TAP: kitsao/tyr

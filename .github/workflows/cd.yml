@@ -151,10 +151,25 @@ jobs:
         run: |
           cd npm/app
           yarn install # requires optional dependencies to be present in the registry
-          yarn build
-          npm publish --access public 
+          yarn build 
+          cat << EOF > ~/.npmrc
+          //registry.npmjs.org/:_authToken=${NPM_API_KEY}
+          EOF
+          chmod 0600 ~/.npmrc
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_API_KEY: ${{ secrets.NPM_TOKEN }}
+
+
+        # - name: Publish to NPM and Rubygems
+        #  env:
+        #   NPM_API_KEY: ${{ secrets.NPM_API_KEY }}
+        #   RUBYGEMS_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
+        # run: |
+        #   cat << EOF > ~/.npmrc
+        #   //registry.npmjs.org/:_authToken=${NPM_API_KEY}
+        #   EOF
+        #   chmod 0600 ~/.npmrc
         #
         # you can use this initial file in your homebrew-tap if you don't have an initial formula:
         # <projectname>.rb

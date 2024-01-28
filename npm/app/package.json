@@ -26,9 +26,9 @@
     "typescript": "^4.9.4"
   },
   "optionalDependencies": {
-    "app-linux-x64": "0.1.0",
-    "app-darwin-x64": "0.1.0",
-    "app-windows-x64": "0.1.0"
+    "tyr-x86_64-linux": "0.1.0",
+    "tyr-x86_64-macos": "0.1.0",
+    "tyr-windows-windows ": "0.1.0"
   },
   "eslintConfig": {
     "extends": [

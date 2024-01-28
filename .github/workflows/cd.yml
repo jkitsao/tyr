@@ -43,7 +43,7 @@ jobs:
           target: x86_64-apple-darwin
           cross: false
         - build: x86_64-windows
-          os: windows-2019
+          os: windows-2022
           rust: stable
           target: x86_64-pc-windows-msvc
           cross: false
@@ -105,7 +105,7 @@ jobs:
         shell: bash
         run: |
           mkdir dist
-          if [ "${{ matrix.os }}" = "windows-2019" ]; then
+          if [ "${{ matrix.os }}" = "windows-2022" ]; then
             cp "target/${{ matrix.target }}/release/$BIN_NAME.exe" "dist/"
           else
             cp "target/${{ matrix.target }}/release/$BIN_NAME" "dist/"
@@ -208,9 +208,9 @@ jobs:
           bin="tyr"
           # derive the OS and architecture from the build matrix name
           # note: when split by a hyphen, first part is the OS and the second is the architecture
-          node_os=$(echo "${{ matrix.build.NAME }}" | cut -d '-' -f1)
+          node_os=$(echo "${{ matrix.build.name }}" | cut -d '-' -f1)
           export node_os
-          node_arch=$(echo "${{ matrix.build.NAME }}" | cut -d '-' -f2)
+          node_arch=$(echo "${{ matrix.build.name }}" | cut -d '-' -f2)
           export node_arch
           # set the version
           export node_version="${{ env.RELEASE_VERSION }}"
@@ -230,7 +230,7 @@ jobs:
           if [ "${{ matrix.build.os}}" = "windows-2022" ]; then
             bin="${bin}.exe"
           fi
-          cp "../target${{ matrix.build.target }}/release/${bin}" "${node_pkg}/bin"
+          cp "../dist${{ matrix.build.target }}/release/${bin}" "${node_pkg}/bin"
           # publish the package
           cd "${node_pkg}"
           npm publish --access public --dry-run

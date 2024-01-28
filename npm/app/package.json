@@ -27,11 +27,8 @@
   },
   "optionalDependencies": {
     "app-linux-x64": "0.1.0",
-    "app-linux-arm64": "0.1.0",
     "app-darwin-x64": "0.1.0",
-    "app-darwin-arm64": "0.1.0",
-    "app-windows-x64": "0.1.0",
-    "app-windows-arm64": "0.1.0"
+    "app-windows-x64": "0.1.0"
   },
   "eslintConfig": {
     "extends": [

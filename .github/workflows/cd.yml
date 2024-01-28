@@ -235,7 +235,7 @@ jobs:
 
   publish-npm-base:
     name: Publish the base NPM package
-    needs: publish-npm-binaries
+    needs: [dist]
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout

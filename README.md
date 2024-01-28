@@ -1,4 +1,4 @@
-<img src="https://static.wikia.nocookie.net/godofwar/images/e/e3/Fj1v1EXaAAA6H7Y.jpeg/revision/latest/scale-to-width-down/1000?cb=20230107133419" height="350" width="650"/>
+<img src="https://static.wikia.nocookie.net/godofwar/images/e/e3/Fj1v1EXaAAA6H7Y.jpeg/revision/latest/scale-to-width-down/1000?cb=20230107133419" height="220" width="450"/>
 
 # Tyr - A Node.js Package Manager Written in Rust
 

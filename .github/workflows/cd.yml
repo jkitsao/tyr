@@ -111,25 +111,25 @@ jobs:
           # set the package name
           # note: use 'windows' as OS name instead of 'win32'
           if [ "${{ matrix.os }}" = "windows-2022" ]; then
-            export node_pkg="${bin}-windows-${node_arch}"
+            export node_pkg="${{bin}}-windows-${{node_arch}}"
           else
-            export node_pkg="${bin}-${node_os}-${node_arch}"
+            export node_pkg="${{bin}}-${{node_os}}-${{node_arch}}"
           fi
           # create the package directory
-          mkdir -p "${node_pkg}/bin"
+          mkdir -p "${{node_pkg}}/bin"
           # generate package.json from the template
-          envsubst < package.json.tmpl > "${node_pkg}/package.json"
+          envsubst < package.json.tmpl > "${{node_pkg}}/package.json"
           # copy the binary into the package
           # note: windows binaries has '.exe' extension
           if [ "${{ matrix.os}}" = "windows-2022" ]; then
-            bin="${bin}.exe"
+            bin="${{bin}}.exe"
           fi
-          cp "../target/${{ matrix.target }}/release/${bin}" "${node_pkg}/bin"
+          cp "../target/${{ matrix.target }}/release/${{bin}}" "${{node_pkg}}/bin"
           # publish the package
-          cd "${node_pkg}"
+          cd "${{node_pkg}}"
           # npm publish --access public
           cat << EOF > ~/.npmrc
-          //registry.npmjs.org/:_authToken=${NPM_API_KEY}
+          //registry.npmjs.org/:_authToken=${{NPM_API_KEY}}
           EOF
           chmod 0600 ~/.npmrc
         env:
@@ -157,7 +157,7 @@ jobs:
           yarn install # requires optional dependencies to be present in the registry
           yarn build 
           cat << EOF > ~/.npmrc
-          //registry.npmjs.org/:_authToken=${NPM_API_KEY}
+          //registry.npmjs.org/:_authToken=${{NPM_API_KEY}}
           EOF
           chmod 0600 ~/.npmrc
         env:

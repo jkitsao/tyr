@@ -91,7 +91,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v3
         with:
-          node-version: "20"
+          node-version: "16"
           registry-url: "https://registry.npmjs.org"
 
       - name: Publish to NPM

@@ -152,7 +152,7 @@ jobs:
           cd npm/app
           yarn install # requires optional dependencies to be present in the registry
           yarn build
-          npm publish --access public --dry-run
+          npm publish --access public 
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         #

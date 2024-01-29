@@ -128,12 +128,13 @@ jobs:
           # publish the package
           cd "${node_pkg}"
           cat << EOF > ~/.npmrc
-          //registry.npmjs.org/:_authToken=${env.NPM_API_KEY}
+          //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
           EOF
           chmod 0600 ~/.npmrc
           npm publish --access public
         env:
           NPM_API_KEY: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish-npm-base:
     name: Publish the base NPM package

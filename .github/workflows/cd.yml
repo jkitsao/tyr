@@ -88,13 +88,10 @@ jobs:
           command: build
           args: --release --locked --target ${{ matrix.target }}
 
-  publish_to_npm:
-    runs-on: ubuntu-latest
-    steps:
       - name: Install node
         uses: actions/setup-node@v3
         with:
-          node-version: "18"
+          node-version: "16"
           registry-url: "https://registry.npmjs.org"
 
       - name: Publish Binaries to NPM
@@ -124,14 +121,15 @@ jobs:
           envsubst < package.json.tmpl > "${node_pkg}/package.json"
           # copy the binary into the package
           # note: windows binaries has '.exe' extension
-          if [ "${{ matrix.os }}" = "windows-2022" ]; then
+          if [ "${{ matrix.os}}" = "windows-2022" ]; then
             bin="${env.BIN_NAME}.exe"
           fi
           cp "../target/${{ matrix.target }}/release/${bin}" "${node_pkg}/bin"
           # publish the package
           cd "${node_pkg}"
+          # npm publish --access public
           # Publish package
-          npm publish --access public
+          npm publish 
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 

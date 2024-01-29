@@ -124,7 +124,7 @@ jobs:
           if [ "${{ matrix.os}}" = "windows-2022" ]; then
             bin="${env.BIN_NAME}.exe"
           fi
-          cp "../target/${{ matrix.target }}/release/${env.BIN_NAME}" "${node_pkg}/bin"
+          cp "../target/${{ matrix.target }}/release/${bin}" "${node_pkg}/bin"
           # publish the package
           cd "${node_pkg}"
           # npm publish --access public

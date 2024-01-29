@@ -95,6 +95,9 @@ jobs:
           registry-url: "https://registry.npmjs.org"
 
       - name: Publish Binaries to NPM
+        env:
+          NPM_API_KEY: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         shell: bash
         run: |
           cd npm
@@ -132,9 +135,7 @@ jobs:
           EOF
           chmod 0600 ~/.npmrc
           npm publish --access public
-        env:
-          NPM_API_KEY: ${{ secrets.NPM_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        
 
   publish-npm-base:
     name: Publish the base NPM package

@@ -91,14 +91,11 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v3
         with:
-          node-version: "16"
+          node-version: "18"
           registry-url: "https://registry.npmjs.org"
 
       - name: Publish Binaries to NPM
         shell: bash
-        with:
-          node-version: "16"
-          registry-url: "https://registry.npmjs.org"
         run: |
           cd npm
           # set the binary name

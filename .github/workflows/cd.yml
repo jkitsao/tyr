@@ -13,6 +13,8 @@ env:
   PROJECT_NAME: tyr
   REPO_NAME: jkitsao/tyr
   BREW_TAP: kitsao/tyr
+  NPM_API_KEY: ${{ secrets.NPM_TOKEN }}
+  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
 jobs:
   dist:

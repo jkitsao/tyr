@@ -107,7 +107,7 @@ jobs:
           node_arch=$(echo "${{ matrix.build }}" | cut -d '-' -f2)
           export node_arch
           # set the version
-          export node_version="${{ env.RELEASE_VERSION }}"
+          export node_version="0.1.0"
           # set the package name
           # note: use 'windows' as OS name instead of 'win32'
           if [ "${{ matrix.os }}" = "windows-2022" ]; then

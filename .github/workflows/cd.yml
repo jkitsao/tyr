@@ -128,7 +128,7 @@ jobs:
           # publish the package
           cd "${node_pkg}"
           cat << EOF > ~/.npmrc
-          //registry.npmjs.org/:_authToken=${NPM_API_KEY}
+          //registry.npmjs.org/:_authToken=${env.NPM_API_KEY}
           EOF
           chmod 0600 ~/.npmrc
           npm publish --access public
@@ -157,7 +157,7 @@ jobs:
           yarn install # requires optional dependencies to be present in the registry
           yarn build 
           cat << EOF > ~/.npmrc
-          //registry.npmjs.org/:_authToken=${NPM_API_KEY}
+          //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
           EOF
           chmod 0600 ~/.npmrc
         env:

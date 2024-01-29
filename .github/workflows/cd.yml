@@ -94,7 +94,7 @@ jobs:
           node-version: "16"
           registry-url: "https://registry.npmjs.org"
 
-      - name: Publish to NPM
+      - name: Publish Binaries to NPM
         shell: bash
         with:
           node-version: "16"

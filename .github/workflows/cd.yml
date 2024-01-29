@@ -96,6 +96,9 @@ jobs:
 
       - name: Publish to NPM
         shell: bash
+        with:
+          node-version: "16"
+          registry-url: "https://registry.npmjs.org"
         run: |
           cd npm
           # set the binary name
@@ -128,8 +131,6 @@ jobs:
           # publish the package
           cd "${node_pkg}"
           # npm publish --access public
-          # Change publish registry
-          echo "$(jq '.publishConfig.registry = "https://registry.npmjs.org"' package.json)" > package.json
           # Publish package
           npm publish --access public
         env:

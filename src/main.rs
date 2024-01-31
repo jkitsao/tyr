@@ -11,6 +11,8 @@ mod utils;
 // use serde_json::json;
 use std::collections::BTreeMap;
 mod reconsole;
+
+
 use serde_json::Value;
 use std::collections::HashMap;
 // use std::env;
@@ -33,7 +35,7 @@ fn main() {
     cli::initialize_command_arguments();
     println!("{} Done in {}", SPARKLE, HumanDuration(started.elapsed()));
 }
-//resolve dependancy/impl add command
+//resolve dependency/impl add command
 //first step is to download the passed dep(is-even) from npm to a node_modules folder
 //then add the package version to the prev created json! metadata appending `dependency` with `version`
 // proceed to generate a lock file with
@@ -52,13 +54,13 @@ pub fn resolve_package_from_registry(dep: String, update: bool) {
                 style("[1/4]").bold().dim(),
                 LOOKING_GLASS
             );
-            let package_metadata = package_installer(name.clone(), version);
+             package_installer(name.clone(), version);
             //create/update a lock file
-            let res_package = filesystem::generate_lock_file(package_metadata).unwrap();
+            // let res_package = filesystem::generate_lock_file(package_metadata).unwrap();
             //use the values returned to update package.json
             //also updates/creates dep in package.json
             //create or update dep
-            filesystem::update_package_jason_dep(res_package, update).unwrap();
+            // filesystem::update_package_jason_dep(res_package, update).unwrap();
             const CLIP: Emoji<'_, '_> = Emoji("🔗  ", "");
             println!(
                 "{} {}",
@@ -74,8 +76,8 @@ pub fn resolve_package_from_registry(dep: String, update: bool) {
             // let message = format!("Querying NPM for {}", name);
             // console::show_success(message);
             // call package installer with semvar version
-            let install_db = package_installer(name.clone(), version);
-            filesystem::generate_lock_file(install_db).unwrap(); //also updates/creates dep in package.json
+            // let remote_metadata = package_installer(name.clone(), version);
+            // filesystem::generate_lock_file(remote_metadata).unwrap(); //also updates/creates dep in package.json
             const CLIP: Emoji<'_, '_> = Emoji("🔗  ", "");
             println!(
                 "{} {}",
@@ -100,8 +102,6 @@ fn package_installer(name: String, version: String) -> HashMap<String, Value> {
     let name = resolved.get("name").unwrap();
     // println!("the tar is {:?} and version is {:?}", tarball, version);
     // println!("proceeding to install {}  version {}", name, version);
-    // let message = format!("Installing {}@{}", name, version);
-    // console::show_info(message);
     println!(
         "{} {}Fetching {}@{}",
         style("[2/4]").bold().dim(),
@@ -109,12 +109,18 @@ fn package_installer(name: String, version: String) -> HashMap<String, Value> {
         &name,
         version
     );
-    unzip::extract_tarball_to_disk(tarball.as_str().unwrap(), name.as_str().unwrap());
+    let deps =unzip::extract_tarball_to_disk(tarball.as_str().unwrap(), name.as_str().unwrap());
+    //create/update a lock file
+    let res_package = filesystem::generate_lock_file(resolved.clone(),deps).unwrap();
+    //use the values returned to update package.json
+    //also updates/creates dep in package.json
+    //create or update dep
+    filesystem::update_package_jason_dep(res_package, true).unwrap();
     resolved
 }
 
-//fetch next dep after instalation of package
-//to resolve the next dependancies
+//fetch next dep after installation of package
+//to resolve the next dependencies
 fn resolve_next_dep(name: String) {
     let mut path_name = format!("./node_tests/node_modules/{}/package.json", name);
     let dir_name: String = format!("./node_tests/node_modules/{}", name);
@@ -142,7 +148,7 @@ fn resolve_next_dep(name: String) {
                 let next_dep: Value = json_file_data.get_mut("dependencies").unwrap().clone();
                 let temp_json: HashMap<String, String> = serde_json::from_value(next_dep).unwrap();
                 let it = temp_json.iter();
-                //check if theres dep
+                //check if there's dep
                 match temp_json.is_empty() {
                     true => {
                         // print!("********  no more dependencies *********");
@@ -166,13 +172,14 @@ fn resolve_next_dep(name: String) {
                             //pass false to prevent updating package json with resolved dep
                             resolve_package_from_registry(package_name.to_string(), false);
                         }
-                        //format the map values to stringproceeding to install
+                        //format the map values to string proceeding to install
                     }
                 }
             }
             //package.json does not contain dependency field
             false => {
                 // println!("No dependencies in package")
+
                 // let message = format!("Done ****👍🏾");
                 // println!("****** installing the next one {:?}", package_name);
                 // console::show_info(message);

@@ -11,7 +11,7 @@ const NPM_REGISTRY_URL: &str = "https://registry.npmjs.org";
 pub fn resolve_remote_package(
     name: String,
     version: String,
-) -> Result<HashMap<String, Value>, ureq::Error> {
+) -> Result<HashMap<String, Value>, Error> {
     // println!("name is {}", name);
     // let trimmed = version.trim_matches("~");
     // let message = format!("Installing {}@{}", name, version);

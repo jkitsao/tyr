@@ -12,6 +12,7 @@ use std::io::{BufReader, BufWriter, Write};
 //Generate lock files with package name,version,resolve url, and integrity checksum
 pub fn generate_lock_file(
     package: HashMap<String, Value>,
+    deps:BTreeMap<String,Value>
 ) -> Result<HashMap<String, Value>, Error> {
     //model lock content
     struct LockFile {
@@ -19,13 +20,14 @@ pub fn generate_lock_file(
         version: String,
         resolved: String,
         integrity: String,
+        dependencies:Value
     }
     //formatter function returns placeholders without double quotes around the name, version, resolved, and integrity
     impl LockFile {
         fn format_for_lock_file(&self, name: String) -> String {
             format!(
-                "\n \n {}: \n version {}\n  resolved {}\n  integrity {}",
-                name, self.version, self.resolved, self.integrity
+                "\n \n {}: \n version {}\n  resolved {}\n  integrity {}\n dependencies {}",
+                name, self.version, self.resolved, self.integrity,self.dependencies
             )
         }
     }
@@ -35,8 +37,16 @@ pub fn generate_lock_file(
     let tarball = dist.get("tarball").unwrap();
     let integrity = dist.get("integrity").unwrap();
     let name = package.get("name").unwrap();
+    let contains_dependencies = deps.contains_key("dependencies");
+    let mut dependencies= json!("None");
+    //
+    if contains_dependencies {
+        dependencies= json!(deps.get("dependencies").unwrap())
+    }
+
+    // let next_deps = deps.get("dependencies").expect("Cannot get deps from next pckg");
     //create a lock file with fs package and write to it
-    let mut path_name = format!("./node_tests/tyr.lock");
+    let mut path_name = "./node_tests/tyr.lock".to_string();
     // fs::File::create(path)
     let mut file = OpenOptions::new()
         .append(true)
@@ -57,6 +67,7 @@ pub fn generate_lock_file(
             .to_string(),
         integrity: integrity.to_string(),
         resolved: tarball.to_string(),
+        dependencies
     };
     let name = format!("{}@{}", name, version);
     let dep_name = combine_dependency_and_version(&name);
@@ -68,11 +79,11 @@ pub fn generate_lock_file(
     Ok(package)
 }
 //update or create the dependencies on package.json after updating lock
-//function to update dependancy packages after installation
+//function to update dependency packages after installation
 //first model the dep struct and package struct
 pub fn update_package_jason_dep(package: HashMap<String, Value>, update: bool) -> io::Result<()> {
     //read contents of the file
-    let path_name = format!("./node_tests/package.json");
+    let path_name = "./node_tests/package.json".to_string();
     let file = fs::File::open(path_name).unwrap();
     let reader = BufReader::new(file);
     //
@@ -131,7 +142,7 @@ fn create_dep_obj(
     //merge the 2 data structures
     metadata.extend(dep_value);
     let result = json!(metadata);
-    let mut path_name = format!("./node_tests/package.json");
+    let mut path_name = "./node_tests/package.json".to_string();
     let file = fs::File::create(&mut path_name).expect("failed to create a package.json file");
     // write to package.json file
     let mut writer = BufWriter::new(file);
@@ -158,7 +169,7 @@ fn update_dep_obj(
             let mut temp_json: HashMap<String, String> =
                 serde_json::from_value(current_dep).unwrap();
             temp_json.insert(name.clone(), version);
-            //update package.json instance with new dependancies
+            //update package.json instance with new dependencies
             if let Some(x) = metadata.get_mut("dependencies") {
                 *x = json!(temp_json);
             };
@@ -166,7 +177,7 @@ fn update_dep_obj(
             //write output to file
             //serialize first
             let results = json!(metadata);
-            let mut path_name = format!("./node_tests/package.json");
+            let mut path_name = "./node_tests/package.json".to_string();
             let file =
                 fs::File::create(&mut path_name).expect("failed to create a package.json file");
             let mut writer = BufWriter::new(file);

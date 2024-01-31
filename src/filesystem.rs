@@ -24,10 +24,10 @@ pub fn generate_lock_file(
     }
     //formatter function returns placeholders without double quotes around the name, version, resolved, and integrity
     impl LockFile {
-        fn format_for_lock_file(&self, name: String) -> String {
+        fn format_for_lock_file(&self) -> String {
             format!(
-                "\n \n {}: \n version {}\n  resolved {}\n  integrity {}\n dependencies {}",
-                name, self.version, self.resolved, self.integrity,self.dependencies
+                "{}: \n version {}\n  resolved {}\n  integrity {}\n dependencies \n {} \n \n",
+                self.name, self.version, self.resolved, self.integrity,self.dependencies
             )
         }
     }
@@ -37,12 +37,12 @@ pub fn generate_lock_file(
     let tarball = dist.get("tarball").unwrap();
     let integrity = dist.get("integrity").unwrap();
     let name = package.get("name").unwrap();
-    let contains_dependencies = deps.contains_key("dependencies");
-    let mut dependencies= json!("None");
+    // let contains_dependencies = deps.contains_key("dependencies");
+    let mut dependencies= json!(deps);
     //
-    if contains_dependencies {
-        dependencies= json!(deps.get("dependencies").unwrap())
-    }
+    // if contains_dependencies {
+    //     dependencies= json!(deps.get("dependencies").unwrap())
+    // }
 
     // let next_deps = deps.get("dependencies").expect("Cannot get deps from next pckg");
     //create a lock file with fs package and write to it
@@ -69,10 +69,10 @@ pub fn generate_lock_file(
         resolved: tarball.to_string(),
         dependencies
     };
-    let name = format!("{}@{}", name, version);
-    let dep_name = combine_dependency_and_version(&name);
+    // let name = format!("{}@{}", name, version);
+    // let dep_name = combine_dependency_and_version(&name);
     // let formatted = lock.format_for_lock_file();
-    write!(file, "{}", &lock.format_for_lock_file(dep_name))?;
+    write!(file, "{}", &lock.format_for_lock_file())?;
     // println!("Saved lockfile");
     // update_package_jason_dep(package).unwrap();
 
@@ -113,6 +113,7 @@ pub fn update_package_jason_dep(package: HashMap<String, Value>, update: bool) -
             // println!("Dep object detected we should append to json");
             //update the dep object with installed package metadata
             update_dep_obj(json_file_data, name.clone(), version, update).unwrap();
+            // update = false;
             // resolve_next_dep(name.to_string());
             // println!("current boolean value {} ", update);
         }

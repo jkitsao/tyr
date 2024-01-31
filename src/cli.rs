@@ -37,7 +37,7 @@ pub fn initialize_command_arguments() {
             //loop over packages and install each
             for package in packages.iter() {
                 // println!("Resolving: {}", package);
-                resolve_package_from_registry(package.to_owned(), true)
+                resolve_package_from_registry(package.to_owned(),true)
             }
         }
         Commands::Init { name } => {

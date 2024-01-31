@@ -14,6 +14,7 @@ use tar::Archive;
 // use ureq;
 // use indicatif::{HumanBytes, HumanCount, HumanDuration, HumanFloatCount};
 use std::{thread, time::Duration};
+use clap::builder::Str;
 use ureq::Error::Status;
 use ureq::{Agent, AgentBuilder};
 use crate::utils;
@@ -142,9 +143,9 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) -> BTreeMap<String
             fs::remove_file("./node_tests/node_modules/temp.tar.gz")
                 .expect("Failed to remove temp file");
             // check if package was installed and read package,json contents
-            if !Path::new(dest_folder.as_str()).exists() {
-                fs::create_dir_all(&dest_folder).expect("we cant read the installed package");
-            }
+            // if !Path::new(dest_folder.as_str()).exists() {
+            //     fs::create_dir_all(&dest_folder).expect("we cant read the installed package");
+            // }
             let mut pckg_dest_folder = format!("./node_tests/node_modules/{}/package.json", package_name);
             //check if there's an extra path inside first
             if !Path::new(pckg_dest_folder.as_str()).exists() {
@@ -158,7 +159,7 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) -> BTreeMap<String
             let file = fs::File::open(pckg_dest_folder.clone()).unwrap();
             let reader = BufReader::new(file);
             // Read the JSON contents of the file and assign to Hashmap.
-            let json_file_data: BTreeMap<String, Value> = serde_json::from_reader(reader).unwrap();
+            let mut json_file_data: BTreeMap<String, Value> = serde_json::from_reader(reader).unwrap();
             //if dep is available
             match json_file_data.contains_key("dependencies") {
                 true => {
@@ -166,8 +167,10 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) -> BTreeMap<String
                     //update the dep object with installed package metadata
                     // crate::filesystem::update_dep_obj(json_file_data, name.clone(), version, update).unwrap();
                     // resolve_next_dep(name.to_string());
-                    println!("the deps are {:?}",json_file_data.get("dependencies"));
-                    json_file_data
+                    // println!("the deps are {:?}",json_file_data.get("dependencies"));
+                    let current_dep: Value = json_file_data.get_mut("dependencies").unwrap().clone();
+                    let res:BTreeMap<String,Value>=serde_json::from_value(current_dep).unwrap();
+                    res
                     // println!("current boolean value {} ", update);
                 }
                 false => {

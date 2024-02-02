@@ -15,17 +15,18 @@ enum Commands {
     /// Clones repos
     #[command(arg_required_else_help = true)]
     Init {
-        /// The remote to clone
+        /// Project name
         #[arg(required = false)]
         name: String,
     },
-    /// adds things
+    /// Add package + Name
     #[command(arg_required_else_help = true)]
     Add {
-        /// Stuff to add
+        /// Package name to add from NPM
         #[arg(required = true)]
         packages: Vec<String>,
     },
+    ///Install dependencies available on the lock file
     Install,
 }
 //

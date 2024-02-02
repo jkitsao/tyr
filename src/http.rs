@@ -2,7 +2,7 @@ use crate::reconsole;
 // use clap::error;
 // use indicatif::ProgressBar;
 use serde_json::Value;
-use std::collections::HashMap;
+use std::collections::{HashMap,BTreeMap};
 use ureq::Error;
 use url::form_urlencoded;
 //remote registry path
@@ -11,11 +11,7 @@ const NPM_REGISTRY_URL: &str = "https://registry.npmjs.org";
 pub fn resolve_remote_package(
     name: String,
     version: String,
-) -> Result<HashMap<String, Value>, Error> {
-    // println!("name is {}", name);
-    // let trimmed = version.trim_matches("~");
-    // let message = format!("Installing {}@{}", name, version);
-    // console::show_info(message);
+) -> Result<HashMap<String, Value>,BTreeMap<String,Value>> {
     let url_encoded_name: String = form_urlencoded::byte_serialize(name.as_bytes()).collect();
     let url = format!("{}/{}/{}", NPM_REGISTRY_URL, url_encoded_name, version);
     // println!("URL IS : {}", url);
@@ -39,10 +35,11 @@ pub fn resolve_remote_package(
             let text = response.into_string().unwrap();
             let map: HashMap<String, Value> = serde_json::from_str(&text.as_ref()).unwrap();
             // eprintln!("Registry error code {:?} {:?}", code, text);
+            let bmap=map.into_iter().collect();
             // let error = String::from();
-            reconsole::show_error(text);
+            // reconsole::show_error(text);
             //return map with error values
-            Ok(map)
+            Err(bmap)
         }
         Err(_) => {
             /* some kind of io/transport error */
@@ -56,7 +53,8 @@ pub fn resolve_remote_package(
                 "error".to_string(),
                 serde_json::from_str("connection").unwrap(),
             );
-            Ok(map)
+            let bmap=map.into_iter().collect();
+            Err(bmap)
         }
     }
 }

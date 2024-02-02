@@ -96,7 +96,6 @@ pub fn update_package_jason_dep(package: HashMap<String, Value>, update: bool) -
         .unwrap()
         .to_string()
         .trim_matches('"')
-        .trim_matches('~')
         .parse()
         .unwrap();
     let name: String = package
@@ -186,7 +185,8 @@ fn update_dep_obj(
             Ok(name)
         }
         false => {
-            println!("not updating dep");
+            // println!("not updating dep");
+            // dependency object wont be updated
             Ok("error".to_string())
         }
     }

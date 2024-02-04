@@ -16,10 +16,10 @@ use tar::Archive;
 use std::{thread, time::Duration};
 // use clap::builder::Str;
 use ureq::Error::Status;
-use ureq::{Agent, AgentBuilder};
+use ureq::{Agent, AgentBuilder,Error};
 use crate::utils;
 
-pub fn extract_tarball_to_disk(url: &str, package_name: &str) -> BTreeMap<String,Value> {
+pub fn extract_tarball_to_disk(url: &str, package_name: &str) -> Result<BTreeMap<String,Value>,String> {
     //create ureq agent
     let agent: Agent = AgentBuilder::new()
         .build();
@@ -136,7 +136,7 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) -> BTreeMap<String
                         .unpack(&dest_path)
                         .expect("Failed to unpack tar entry");
                 });
-            ext_bar.finish_with_message("Done");
+            ext_bar.finish_with_message("Done✅");
             // Cleanup: Remove the temporary tar file
             fs::remove_file("./node_tests/node_modules/temp.tar.gz")
                 .expect("Failed to remove temp file");
@@ -163,28 +163,22 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) -> BTreeMap<String
                 true => {
                     // println!("Dep object detected we should append to json");
                     //update the dep object with installed package metadata
-                    // crate::filesystem::update_dep_obj(json_file_data, name.clone(), version, update).unwrap();
-                    // resolve_next_dep(name.to_string());
-                    // println!("the deps are {:?}",json_file_data.get("dependencies"));
+
                     let current_dep: Value = json_file_data.get_mut("dependencies").unwrap().clone();
                     let res:BTreeMap<String,Value>=serde_json::from_value(current_dep).unwrap();
-                    res
+                    Ok(res)
                     // println!("current boolean value {} ", update);
                 }
                 false => {
-                    println!("Dep object not found after unzip");
-                    json_file_data
+                    let message = "Done installing deps ";
+                    // println!("{}",message);
+                    Err(message.to_string())
                     // probably the first package
                     // crate::filesystem::create_dep_obj(json_file_data, name, version).unwrap();
                 }
             }
         }
-        // Err(Error::Status(_code, _response)) => {
-        //     /* the server returned an unexpected status
-        //     code (such as 400, 500 etc.) */
-        //     eprint!("Error code from the server");
-        // }
-        // match ureq::get(url).call() {
+
         Err(Status(503, r)) | Err(Status(429, r)) => {
             for _ in 1..4 {
                 let retry: Option<u64> = r.header("retry-after").and_then(|h| h.parse().ok());
@@ -192,18 +186,19 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) -> BTreeMap<String
                 eprintln!("{} for {}, retry in {}", r.status(), r.get_url(), retry);
                 thread::sleep(Duration::from_secs(retry));
             }
-            // let mut res:BTreeMap<String,Value>;
-            let mut res:BTreeMap<String,Value> = Default::default();
-            res
+
+            let message = "Failed please check your connection";
+            // println!("{}",message);
+            Err(message.to_string())
         }
         // };
         Err(_) => {
             /* some kind of io/transport error */
-            eprintln!("Failed please check your connection");
-            let mut res:BTreeMap<String,Value> = Default::default();
-            // res.insert("Error".to_string(), serde_json::from_str("check your connection").unwrap());
-            return res;
-            // extract_tarball_to_disk(url, package_name);
+            // eprintln!("Failed please check your connection");
+            let message = "Failed please check your connection";
+            // println!("{}",message);
+            Err(message.to_string())
+
         }
     }
 }

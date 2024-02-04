@@ -62,14 +62,11 @@ pub fn resolve_package_from_registry(dep: String,update:bool) {
     // let mut update=true;
     //get required values from the string
     let (name, version) = semvar::split_package_version(&dep);
-    println!("package is {}, and the version is {}", name, version);
-    //     let mut update =  JsonFile {
-    //     should_update:true
-    // };
+    // println!("package is {}, and the version is {}", name, version);
     match version.as_ref() {
         "latest" => {
             println!(
-                "{} {}Resolving packages...",
+                "{} {}Resolving packages...🔎",
                 style("[1/4]").bold().dim(),
                 LOOKING_GLASS
             );
@@ -82,12 +79,18 @@ pub fn resolve_package_from_registry(dep: String,update:bool) {
                         //don't update package.json
                         // println!("the result is {}", result);//
                         resolve_package_from_registry(result,false);
-                    } else {
+
+                    }
+                    //dependency object is available but empty i.e is-buffer
+                        //means package has no external dependencies
+                    else {
                         println!("BTreeMap is empty");
                     }
                 }
+                //dependency object is not defined in package.json file
+                    //most likely end of resolving dependencies
                 Err(err)=>{
-                    eprintln!("Connection issues {:?}",err)
+                    eprintln!("{:?}",err)
                 }
             }
 
@@ -108,7 +111,7 @@ pub fn resolve_package_from_registry(dep: String,update:bool) {
                     }
                 }
             } else if let Err(err) = next_deps {
-                eprintln!("Connection issues {:?}", err)
+                eprintln!(" {:?}", err)
             }
         }
     }
@@ -118,11 +121,10 @@ pub fn resolve_package_from_registry(dep: String,update:bool) {
 //installer function that resolves remote packages and arranges to disk
 // static  mut is_update=true;
 
-fn package_installer(name: String, version: String,  update:bool) -> Result<BTreeMap<String, Value>, Error> {
+fn package_installer(name: String, version: String,  update:bool) -> Result<BTreeMap<String, Value>, String> {
     // TODO: have it return the next dep to be resolved
     // call download package from registry function with
     let res = http::get_response(name.as_str(), version.as_str());
-    // let map: HashMap<String, Value> = serde_json::from_str(&text.as_ref()).unwrap();
     //Match for response resolved or error
     match res {
         Ok(response)=>{
@@ -140,7 +142,7 @@ fn package_installer(name: String, version: String,  update:bool) -> Result<BTre
             if update {
                 //Actual package req
                 println!(
-                    "{} {}Fetching {} version {}",
+                    "{} {} 🚀 Fetching {} version {}",
                     style("[3/4]").bold().dim(),
                     CLIP,
                     style(&name).bold().cyan().bright(),
@@ -149,7 +151,7 @@ fn package_installer(name: String, version: String,  update:bool) -> Result<BTre
             }
             else {
                 println!(
-                    "{} {}Resolving Dependency {} version {}",
+                    "{} {} 🚀 Resolving Dependency {} version {}",
                     style("[2/4]").bold().dim(),
                     TRUCK,
                     style(&name).cyan(),
@@ -158,15 +160,22 @@ fn package_installer(name: String, version: String,  update:bool) -> Result<BTre
             }
             //Download and extract to file
             let deps = unzip::extract_tarball_to_disk(tarball.as_str().unwrap(), name.as_str().unwrap());
-            //create/update a lock file
-            let res_package = filesystem::generate_lock_file(resolved.clone(),deps.clone()).unwrap();
-            //use the values returned to update package.json
-            filesystem::update_package_jason_dep(res_package, update).unwrap();
-
-            Ok(deps)
+           match deps {
+               Ok(dep)=>{
+                   //create/update a lock file
+                   let res_package = filesystem::generate_lock_file(resolved.clone(),dep.clone()).unwrap();
+                   //use the values returned to update package.json
+                   filesystem::update_package_jason_dep(res_package, update).unwrap();
+                   Ok(dep)
+               }
+               Err(ref value) =>{
+                   // eprintln!("{}",value);
+                   Err(value.to_string())
+               }
+           }
         }
         Err(err) =>{
-            Err(err)
+            Err(err.to_string())
         }
     }
 

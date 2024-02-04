@@ -14,7 +14,7 @@ use tar::Archive;
 // use ureq;
 // use indicatif::{HumanBytes, HumanCount, HumanDuration, HumanFloatCount};
 use std::{thread, time::Duration};
-use clap::builder::Str;
+// use clap::builder::Str;
 use ureq::Error::Status;
 use ureq::{Agent, AgentBuilder};
 use crate::utils;
@@ -22,8 +22,6 @@ use crate::utils;
 pub fn extract_tarball_to_disk(url: &str, package_name: &str) -> BTreeMap<String,Value> {
     //create ureq agent
     let agent: Agent = AgentBuilder::new()
-        .timeout_read(Duration::from_secs(5))
-        .timeout_write(Duration::from_secs(5))
         .build();
     // URL of the tar file
     // let url = "https://example.com/path/to/your.tar.gz";

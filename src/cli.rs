@@ -48,7 +48,10 @@ pub fn initialize_command_arguments() {
         Commands::Install => {
             println!("Installing Dependencies");
             let lockfile_path = "./node_tests/tyr.lock";
-            install::load_entries_from_lockfile(lockfile_path)
+            install::load_entries_from_lockfile(lockfile_path);
+            //get a set of packages to install by computing the sym difference between
+              //lock file and json file
+
         }
     }
 }

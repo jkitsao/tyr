@@ -62,8 +62,8 @@ pub fn generate_lock_file(
             .to_string(),
         version: version
             .to_string()
-            .replace("\"", "")
-            .trim_matches('"')
+            // .replace("\"", "")
+            // .trim_matches('"')
             .to_string(),
         integrity: integrity.to_string(),
         resolved: tarball.to_string(),

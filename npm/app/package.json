@@ -1,6 +1,6 @@
 {
-  "name": "tyr",
-  "version": "0.1.0",
+  "name": "tyrr",
+  "version": "0.2.0",
   "bin": "lib/index.js",
   "scripts": {
     "typecheck": "tsc --noEmit",

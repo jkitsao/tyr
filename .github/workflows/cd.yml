@@ -110,7 +110,7 @@ jobs:
           node_arch=$(echo "${{ matrix.build }}" | cut -d '-' -f2)
           export node_arch
           # set the version
-          export node_version="0.1.0"
+          export node_version="0.2.0"
           # set the package name
           # note: use 'windows' as OS name instead of 'win32'
           if [ "${{ matrix.os }}" = "windows-2022" ]; then
@@ -162,6 +162,7 @@ jobs:
           //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
           EOF
           chmod 0600 ~/.npmrc
+          npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_API_KEY: ${{ secrets.NPM_TOKEN }}

@@ -15,7 +15,7 @@ function getExePath() {
   let os = process.platform as string;
   let extension = "";
   if (["win32", "cygwin"].includes(process.platform)) {
-    os = "windows";
+    os = "win32";
     extension = ".exe";
   }
 

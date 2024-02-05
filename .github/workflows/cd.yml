@@ -3,79 +3,169 @@ on:
   push:
     tags:
       - "v*.*.*"
+  # schedule:
+  # - cron: '0 0 * * *' # midnight UTC
 
 env:
   BIN_NAME: tyr
   PROJECT_NAME: tyr
   REPO_NAME: jkitsao/tyr
   BREW_TAP: kitsao/tyr
+  NPM_API_KEY: ${{ secrets.NPM_TOKEN }}
+  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
 jobs:
   dist:
-    name: Build and Publish Binaries
-    runs-on: ubuntu-latest
+    name: Dist
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+      pull-requests: write
+      repository-projects: write
     strategy:
+      fail-fast: false # don't fail other jobs if one fails
       matrix:
-        os: [ubuntu-20.04, macos-latest, windows-2022]
-        arch: [x86_64, aarch64]
-        rust: [stable]
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v2
+        build: [x86_64-linux,x86_64-macos, x86_64-windows] #, x86_64-win-gnu, win32-msvc
+        include:
+        - build: x86_64-linux
+          os: ubuntu-20.04
+          rust: stable
+          target: x86_64-unknown-linux-gnu
+          cross: false
+        # - build: aarch64-linux
+        #   os: ubuntu-20.04
+        #   rust: stable
+        #   target: aarch64-unknown-linux-gnu
+        #   cross: true
+        - build: x86_64-macos
+          os: macos-latest
+          rust: stable
+          target: x86_64-apple-darwin
+          cross: false
+        - build: x86_64-windows
+          os: windows-2022
+          rust: stable
+          target: x86_64-pc-windows-msvc
+          cross: false
+        # - build: aarch64-macos
+        #   os: macos-latest
+        #   rust: stable
+        #   target: aarch64-apple-darwin
+        # - build: x86_64-win-gnu
+        #   os: windows-2019
+        #   rust: stable-x86_64-gnu
+        #   target: x86_64-pc-windows-gnu
+        # - build: win32-msvc
+        #   os: windows-2019
+        #   rust: stable
+        #   target: i686-pc-windows-msvc
 
-      - name: Install Rust Toolchain
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Install ${{ matrix.rust }} toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: ${{ matrix.rust }}
-          target: ${{ matrix.os }}-${{ matrix.arch }}-unknown-linux-gnu
+          target: ${{ matrix.target }}
           override: true
 
-      - name: Build and Test Binary
-        run: cargo test --release --locked --target ${{ matrix.os }}-${{ matrix.arch }}-unknown-linux-gnu
+      - name: Run cargo test
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: ${{ matrix.cross }}
+          command: test
+          args: --release --locked --target ${{ matrix.target }}
 
-      - name: Build Release Binary
-        run: cargo build --release --locked --target ${{ matrix.os }}-${{ matrix.arch }}-unknown-linux-gnu
+      - name: Build release binary
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: ${{ matrix.cross }}
+          command: build
+          args: --release --locked --target ${{ matrix.target }}
 
-      - name: Setup Node.js
+      - name: Install node
         uses: actions/setup-node@v3
         with:
           node-version: "16"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Publish Binaries to NPM
+        env:
+          NPM_API_KEY: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        shell: bash
         run: |
           cd npm
+          # set the binary name
           bin="tyr"
-          node_os=$(echo "${{ matrix.os }}" | cut -d '-' -f1)
-          node_arch=$(echo "${{ matrix.arch }}" | cut -d '-' -f1)
-          node_pkg="${bin}-${node_os}-${node_arch}"
+          # derive the OS and architecture from the build matrix name
+          # note: when split by a hyphen, first part is the OS and the second is the architecture
+          node_os=$(echo "${{ matrix.build }}" | cut -d '-' -f1)
+          export node_os
+          node_arch=$(echo "${{ matrix.build }}" | cut -d '-' -f2)
+          export node_arch
+          # set the version
+          export node_version="0.1.0"
+          # set the package name
+          # note: use 'windows' as OS name instead of 'win32'
+          if [ "${{ matrix.os }}" = "windows-2022" ]; then
+            export node_pkg="${bin}-windows-${node_arch}"
+          else
+            export node_pkg="${bin}-${node_os}-${node_arch}"
+          fi
+          # create the package directory
           mkdir -p "${node_pkg}/bin"
-          cp "../target/${{ matrix.os }}-${{ matrix.arch }}/release/${bin}" "${node_pkg}/bin"
+          # generate package.json from the template
+          envsubst < package.json.tmpl > "${node_pkg}/package.json"
+          # copy the binary into the package
+          # note: windows binaries has '.exe' extension
+          if [ "${{ matrix.os}}" = "windows-2022" ]; then
+            bin="${bin}.exe"
+          fi
+          cp "../target/${{ matrix.target }}/release/${bin}" "${node_pkg}/bin"
+          # publish the package
           cd "${node_pkg}"
+          cat << EOF > ~/.npmrc
+          //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
+          EOF
+          chmod 0600 ~/.npmrc
           npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        
 
   publish-npm-base:
-    name: Publish Base NPM Package
+    name: Publish the base NPM package
     needs: dist
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
+      - name: Install node
         uses: actions/setup-node@v3
         with:
           node-version: "16"
+          registry-url: "https://registry.npmjs.org"
 
-      - name: Install Dependencies
-        run: cd npm/app && yarn install && yarn build
-
-      - name: Publish Package to NPM
-        run: cd npm/app && npm publish --access public
+      - name: Publish the package
+        continue-on-error: true
+        shell: bash
+        run: |
+          cd npm/app
+          yarn install # requires optional dependencies to be present in the registry
+          yarn build 
+          cat << EOF > ~/.npmrc
+          //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
+          EOF
+          chmod 0600 ~/.npmrc
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_API_KEY: ${{ secrets.NPM_TOKEN }}
+
 
         # - name: Publish to NPM and Rubygems
         #  env:

@@ -170,7 +170,7 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) -> Result<BTreeMap
                     // println!("current boolean value {} ", update);
                 }
                 false => {
-                    let message = "Done installing deps ";
+                    let message = "Dep object not found after unzip";
                     // println!("{}",message);
                     Err(message.to_string())
                     // probably the first package

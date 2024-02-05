@@ -19,7 +19,7 @@ use std::fs;
 use serde_json;
 use serde_json::{ Value};
 use std::io::BufReader;
-use crate::resolve_package_from_registry;
+// use crate::resolve_package_from_registry;
 
 // Step 1: Load Entries from Lockfile
 pub fn load_entries_from_lockfile(lockfile_path: &str)  {
@@ -77,10 +77,6 @@ pub fn load_entries_from_lockfile(lockfile_path: &str)  {
           println!("Cannot find dependencies to install, Check your package.json file")
         }
     }
-
-
-
-
 }
 fn remove_non_numbers(input: &str) -> String {
     let result: String = input

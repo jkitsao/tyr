@@ -1,6 +1,6 @@
 {
   "name": "tyrr",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "bin": "lib/index.js",
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -26,9 +26,9 @@
     "typescript": "^4.9.4"
   },
   "optionalDependencies": {
-    "tyr-x86_64-linux": "0.4.0",
-    "tyr-x86_64-macos": "0.4.0",
-    "tyr-x86_64-windows": "0.4.0"
+    "tyr-linux-x64": "0.5.0",
+    "tyr-darwin-x64": "0.5.0",
+    "tyr-windows-x64": "0.5.0"
   },
   "eslintConfig": {
     "extends": [

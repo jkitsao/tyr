@@ -1,7 +1,9 @@
 use crate::init;
+// use crate::banner::draw_banner;
 use crate::install;
 use crate::resolve_package_from_registry;
 use clap::{Parser, Subcommand};
+// use crate::dialogue;
 /// A fictional versioning CLI
 #[derive(Debug, Parser)] // requires `derive` feature
 #[command(name = "tyr")]
@@ -12,21 +14,26 @@ struct Cli {
 }
 #[derive(Debug, Subcommand)]
 enum Commands {
-    /// Clones repos
-    #[command(arg_required_else_help = true)]
+    /// Used to scaffold a new Node.js project
+    /// It prompts the user for essential project details and generates a package.json file with the provided information.
+    #[command(arg_required_else_help = false)]
     Init {
-        /// Project name
+        /// Project name not required
         #[arg(required = false)]
-        name: String,
+        name: Option<String>,
     },
-    /// Add package + Name
+    /// Add dependencies to the project:
+    /// fetches a package from the NPM registry and updates the tyr.lock file to track package versions and dependencies.
+    /// If the package is not already listed in the package.json file, it will be added as a dependency.
     #[command(arg_required_else_help = true)]
     Add {
-        /// Package name to add from NPM
+        /// Package name to add from NPM is required
         #[arg(required = true)]
         packages: Vec<String>,
     },
-    ///Install dependencies available on the lock file
+    /// Install project dependencies:
+    /// resolves dependencies listed in both the tyr.lock file and package.json file.
+    /// It installs the necessary packages into the project's node_modules directory.
     Install,
 }
 //
@@ -42,8 +49,10 @@ pub fn initialize_command_arguments() {
             }
         }
         Commands::Init { name } => {
-            println!("Initializing {:?}", name);
+            // println!("Initializing {:?}", name);
+            // println!("Initializing: {}",name.unwrap().clone());
             init::init_new_project(name);
+            // dialogue::dialogue();
         }
         Commands::Install => {
             println!("Installing Dependencies");
@@ -51,7 +60,6 @@ pub fn initialize_command_arguments() {
             install::load_entries_from_lockfile(lockfile_path);
             //get a set of packages to install by computing the sym difference between
               //lock file and json file
-
         }
     }
 }

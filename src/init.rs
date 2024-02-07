@@ -8,7 +8,8 @@ use std::fs;
 use std::io;
 use std::io::BufWriter;
 use std::io::Write;
-
+use dialoguer::{theme::ColorfulTheme, Input};
+use nodejs_semver::{Range, Version};
 // model the project information
 struct Project {
     name: String,
@@ -45,8 +46,9 @@ impl Project {
 }
 //handle project initialization
 
-pub fn init_new_project(name: String) {
+pub fn init_new_project(default:Option<String>) {
     // cache required variables
+    let mut name = String::new();
     let mut version = String::new();
     let mut description = String::new();
     let mut entry_point = String::new();
@@ -56,46 +58,69 @@ pub fn init_new_project(name: String) {
     let mut private_input = String::new();
     let private = true;
     //get name of project
-    // println!("Enter the name of your project ");
-    // io::stdin()
-    //     .read_line(&mut name)
-    //     .expect("Please enter a valid project name");
-    // println!("create a project called {}", name);
+     name = Input::with_theme(&ColorfulTheme::default())
+        .with_prompt("Project Name")
+         .default(default.unwrap())
+        .interact_text()
+        .unwrap();
+
+    println!("Creating {}!", name);
     //get project version
-    println!("Version");
-    io::stdin()
-        .read_line(&mut version)
-        .expect("Please enter a valid version");
+    version = Input::with_theme(&ColorfulTheme::default())
+        .with_prompt("Semver Version")
+        .default("1.0.0".to_string())
+        .interact_text()
+        .unwrap();
+
+    println!("Version: {}", version);
     //get project description
-    println!("Description");
-    io::stdin()
-        .read_line(&mut description)
-        .expect("Please enter a valid description");
+    description = Input::with_theme(&ColorfulTheme::default())
+        .with_prompt("Project Description")
+        .default("NodeJS Application".to_string())
+        .interact_text()
+        .unwrap();
+
+    println!("Description: {}", description);
     // get projects entry point
-    println!("Entry Point");
-    io::stdin()
-        .read_line(&mut entry_point)
-        .expect("Please enter a valid entry point");
+    entry_point = Input::with_theme(&ColorfulTheme::default())
+        .with_prompt("Default Entry Point")
+        .default("index.js".to_string())
+        .interact_text()
+        .unwrap();
+
+    println!("Entry Point: {}", entry_point);
     //get repo url
-    println!("Repository url");
-    io::stdin()
-        .read_line(&mut repo_url)
-        .expect("Please enter a valid git url");
+    repo_url = Input::with_theme(&ColorfulTheme::default())
+        .with_prompt("Repository URL")
+        // .default("1.0.0".to_string())
+        .interact_text()
+        .unwrap();
+
+    println!("Repository: {}", repo_url);
     // get author
-    println!("Author");
-    io::stdin()
-        .read_line(&mut author)
-        .expect("Please enter a valid author name");
+    author = Input::with_theme(&ColorfulTheme::default())
+        .with_prompt("Author")
+        .default("".to_string())
+        .interact_text()
+        .unwrap();
+
+    println!("Author: {}", author);
     // get license
-    println!("Licence");
-    io::stdin()
-        .read_line(&mut license)
-        .expect("Please enter a valid License type");
+    license = Input::with_theme(&ColorfulTheme::default())
+        .with_prompt("Licence")
+        .default("MIT".to_string().to_uppercase())
+        .interact_text()
+        .unwrap();
+
+    println!("License: {}", license.to_uppercase());
     //  get is project private
-    println!("Private");
-    io::stdin()
-        .read_line(&mut private_input)
-        .expect("Invalid input");
+    private_input = Input::with_theme(&ColorfulTheme::default())
+        .with_prompt("Private")
+        .default("false".to_string())
+        .interact_text()
+        .unwrap();
+
+    println!("Permissions: {}", private_input);
     //construct new project from user input
     let project = Project::new_project(
         name.trim().parse().unwrap(),

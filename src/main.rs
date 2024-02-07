@@ -12,6 +12,9 @@ mod utils;
 // use serde_json::json;
 use std::collections::{BTreeMap,HashMap};
 mod reconsole;
+mod banner;
+// mod dialogue;
+
 use std::process::ExitCode;
 
 use serde_json::Value;
@@ -38,7 +41,7 @@ static SPARKLE: Emoji<'_, '_> = Emoji("✨ ", ":-)");
 struct JsonFile {
     should_update:bool
 }
-fn main() ->ExitCode  {
+fn main() -> ExitCode  {
     // graceful shutdown
     ctrlc::set_handler(move || {
         println!("{}",style("Received interrupt signal (Ctrl+C). Gracefully shutting down...
@@ -70,7 +73,7 @@ pub fn resolve_package_from_registry(dep: String,update:bool) {
                 style("[1/4]").bold().dim(),
                 LOOKING_GLASS
             );
-
+            //TODO: get next dependencies from NPM instead of reading file system
             let next_deps = package_installer(name.clone(), version,update.clone());
             match next_deps {
                 Ok(dependencies) =>{

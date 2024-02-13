@@ -1,120 +1,77 @@
 <img src="https://static.wikia.nocookie.net/godofwar/images/e/e3/Fj1v1EXaAAA6H7Y.jpeg/revision/latest/scale-to-width-down/1000?cb=20230107133419" height="220" width="450"/>
 
-# Tyr - A Node.js Package Manager Written in Rust
+# Tyrr Package Manager Documentation
 
-Tyr is a lightweight, fast, and reliable package manager for Node.js projects, implemented in Rust. It aims to provide efficient dependency management, project initialization, and package installation workflows.
+## Introduction
 
-## Running from Source
+Tyrr is a package manager designed to simplify the process of managing dependencies and scaffolding Node.js projects. It is written in **Rust** and is actively developed to provide efficient and reliable functionality. While the package name on npm is 'tyrr' due to naming conflicts, it's referred to as 'Tyr' for clarity throughout this documentation.
 
-To run Tyr from the source code, ensure that you have Rust installed. You can install Rust by following the instructions on the [official website](https://www.rust-lang.org/tools/install).
+### Features
 
-Clone the repository:
+- Init Command: Scaffold a new Node.js project by generating a `package.json` file with essential project details. This command prompts the user for necessary information.
+- Add Command: Fetch packages from the NPM registry and update the `tyr.lock` file to track package versions and dependencies.
+- Install Command: Resolve dependencies listed in both the `tyr.lock` file and `package.json` file.
 
-```sh
-git clone https://github.com/jkitsao/tyr.git
-```
+## Getting Started
 
-Navigate to the project directory:
+To start using Tyr, you need to install it globally using npm:
 
-```sh
-cd tyr
-```
+`npm install -g tyrr`
 
-Run Tyr with Cargo:
+After installation, you can use Tyr via the command line interface (`CLI`) using the `tyrr` command.
 
-```sh
-cargo run <command>
-```
+## Commands
 
-Replace `command` with one of the supported commands, such as init, add, etc.
+### 1\. Init Command
 
-# Features
+The `init` command is used to scaffold a new Node.js project. It prompts the user for essential project details such as project name, description, author, etc., and generates a `package.json` file with the provided information.
 
-- **`init:`** Initialize a new Node.js project with a basic project structure and configuratin.
-- **`add:`** Fetch new packages from npm and
-  generate a lock file `tyr.lock` to ensure reproducible builds.
-- **`install:`** Work in progress. Install dependencies specified in the tyr.lock file.
+#### Usage
 
-# Roadmap
+`tyrr init`
 
-## Minimum Viable Product (MVP)
+### 2\. Add Command
 
-- `Init:` Initialize a new Node.js project with a basic project structure and a package.json file.
-- `Add:` Fetch dependencies from npm and update the package.json file.
-- `Lock File Generation:` Create a lock file (tyr.lock) to track dependency versions.
-- `Dependency Resolution:` Ensure consistent dependency versions across different environments.
-- `Install Command:` Install dependencies specified in the tyr.lock file.
+The `add` command fetches a package from the NPM registry and updates the `tyr.lock` file to track package versions and dependencies.
 
-# Additional Features
+#### Usage
 
-- `Dependency Management:` Support for updating, removing, and listing dependencies.
-- `Script Execution:` Ability to execute scripts defined in the package.json file.
-- `Registry Support:` Allow configuring custom registries for package installation.
-- `Concurrency:` Parallel dependency resolution and installation for faster performance.
-- `Versioning:` Semantic versioning support for package management and updates.
+`tyrr add <package-name>`
 
-⚠️ **Warning: Do Not Use in Production**
+### 3\. Install Command
 
-Tyr is currently in early development and may not be suitable for use in production environments. Use it at your own risk.
+The `install` command resolves dependencies listed in both the `tyr.lock` file and `package.json` file.
 
----
-<img src="https://static.wikia.nocookie.net/godofwar/images/e/e3/Fj1v1EXaAAA6H7Y.jpeg/revision/latest/scale-to-width-down/1000?cb=20230107133419" height="220" width="450"/>
+#### Usage
 
-# Tyr - A Node.js Package Manager Written in Rust
+`tyrr install`
 
-Tyr is a lightweight, fast, and reliable package manager for Node.js projects, implemented in Rust. It aims to provide efficient dependency management, project initialization, and package installation workflows.
+### Example Usage
 
-## Running from Source
+## Scaffold a new Node.js project
 
-To run Tyr from the source code, ensure that you have Rust installed. You can install Rust by following the instructions on the [official website](https://www.rust-lang.org/tools/install).
+`tyrr init`
 
-Clone the repository:
+## Add a package from the NPM registry
 
-```sh
-git clone https://github.com/jkitsao/tyr.git
-```
+`tyrr add react`
 
-Navigate to the project directory:
+## Install dependencies
 
-```sh
-cd tyr
-```
+`tyrr install`
 
-Run Tyrr with Cargo:
+## Configuration
 
-```sh
-cargo run <command>
-```
+Tyr doesn't require any additional configuration files. However, it relies on the `package.json` and `tyr.lock` files to manage project dependencies.
 
-Replace `command` with one of the supported commands, such as init, add, etc.
+## Contributing
 
-# Features
+Tyr is an open-source project, and contributions are welcome. If you encounter any bugs or have suggestions for improvements, please feel free to submit a pull request on the [GitHub repository](https://github.com/jkitsao/tyr).
 
-- **`init:`** Initialize a new Node.js project with a basic project structure and configuratin.
-- **`add:`** Fetch new packages from npm and
-  generate a lock file `tyr.lock` to ensure reproducible builds.
-- **`install:`** Work in progress. Install dependencies specified in the tyr.lock file.
+## Feedback and Support
 
-# Roadmap
+For any feedback, suggestions, or support inquiries, please reach out to us through GitHub Issues or contact us via email at kitsaojackson22@gmail.com.
 
-## Minimum Viable Product (MVP)
+## License
 
-- `Init:` Initialize a new Node.js project with a basic project structure and a package.json file.
-- `Add:` Fetch dependencies from npm and update the package.json file.
-- `Lock File Generation:` Create a lock file (tyr.lock) to track dependency versions.
-- `Dependency Resolution:` Ensure consistent dependency versions across different environments.
-- `Install Command:` Install dependencies specified in the tyr.lock file.
-
-# Additional Features
-
-- `Dependency Management:` Support for updating, removing, and listing dependencies.
-- `Script Execution:` Ability to execute scripts defined in the package.json file.
-- `Registry Support:` Allow configuring custom registries for package installation.
-- `Concurrency:` Parallel dependency resolution and installation for faster performance.
-- `Versioning:` Semantic versioning support for package management and updates.
-
-⚠️ **Warning: Do Not Use in Production**
-
-Tyr is currently in early development and may not be suitable for use in production environments. Use it at your own risk.
-
----
+This project is licensed under the MIT License - see the LICENSE file for details.

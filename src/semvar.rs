@@ -33,11 +33,4 @@ fn convert_to_version(input: &str) -> String {
     // Return the input string as is if it doesn't meet the condition
     input.to_string()
 }
-//remove non numbers from string
-fn remove_non_numbers(input: &str) -> String {
-    let result: String = input
-        .chars()
-        .filter(|c| c.is_digit(10) || *c == '.')
-        .collect();
-    result
-}
+//

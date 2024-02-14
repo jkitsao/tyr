@@ -3,8 +3,9 @@ use crate::init;
 use crate::install;
 use crate::resolve_package_from_registry;
 use clap::{Parser, Subcommand};
+use console::{style, Emoji};
 // use crate::dialogue;
-/// A fictional versioning CLI
+/// Another Node resource Negotiator
 #[derive(Debug, Parser)] // requires `derive` feature
 #[command(name = "tyr")]
 #[command(about = "Faster than NPM", long_about = None)]
@@ -37,6 +38,7 @@ enum Commands {
     Install,
 }
 //
+static TRUCK: Emoji<'_, '_> = Emoji("🚚  ", "");
 pub fn initialize_command_arguments() {
     let args = Cli::parse();
     //
@@ -44,8 +46,13 @@ pub fn initialize_command_arguments() {
         Commands::Add { packages } => {
             //loop over packages and install each
             for package in packages.iter() {
-                // println!("Resolving: {}", package);
-                resolve_package_from_registry(package.to_owned(),true)
+                let msg = format!(
+                    "{} Fetching version information for {} \n",
+                    TRUCK,
+                    package.clone()
+                );
+                println!("{}", style(msg).bold().bright().yellow());
+                resolve_package_from_registry(package.to_owned(), true)
             }
         }
         Commands::Init { name } => {
@@ -59,7 +66,7 @@ pub fn initialize_command_arguments() {
             let lockfile_path = "./node_tests/tyr.lock";
             install::load_entries_from_lockfile(lockfile_path);
             //get a set of packages to install by computing the sym difference between
-              //lock file and json file
+            //lock file and json file
         }
     }
 }

@@ -5,11 +5,12 @@ use serde_json::json;
 // use serde_json::Value;
 use std::fs;
 // use std::fs::OpenOptions;
+use dialoguer::{theme::ColorfulTheme, Input};
+use nodejs_semver::{SemverError, Version};
 use std::io;
 use std::io::BufWriter;
 use std::io::Write;
-use dialoguer::{theme::ColorfulTheme, Input};
-use nodejs_semver::{Range, Version};
+use url::{ParseError, Url};
 // model the project information
 struct Project {
     name: String,
@@ -46,35 +47,34 @@ impl Project {
 }
 //handle project initialization
 
-pub fn init_new_project(default:Option<String>) {
-    // cache required variables
-    let mut name = String::new();
-    let mut version = String::new();
-    let mut description = String::new();
-    let mut entry_point = String::new();
-    let mut repo_url = String::new();
-    let mut author = String::new();
-    let mut license = String::new();
-    let mut private_input = String::new();
+pub fn init_new_project(_default: Option<String>) {
     let private = true;
     //get name of project
-     name = Input::with_theme(&ColorfulTheme::default())
+    let name: String = Input::with_theme(&ColorfulTheme::default())
         .with_prompt("Project Name")
-         .default(default.unwrap())
+        // .default(default.unwrap() | "".to_string())
         .interact_text()
         .unwrap();
 
     println!("Creating {}!", name);
     //get project version
-    version = Input::with_theme(&ColorfulTheme::default())
+    let version = Input::with_theme(&ColorfulTheme::default())
         .with_prompt("Semver Version")
         .default("1.0.0".to_string())
+        //validate user input conforms to semvar standards
+        .validate_with(|input: &String| -> Result<(), SemverError> {
+            let version: Result<Version, SemverError> = input.parse();
+            match version {
+                Ok(_ver) => Ok(()),
+                Err(err) => Err(err),
+            }
+        })
         .interact_text()
         .unwrap();
 
     println!("Version: {}", version);
     //get project description
-    description = Input::with_theme(&ColorfulTheme::default())
+    let description = Input::with_theme(&ColorfulTheme::default())
         .with_prompt("Project Description")
         .default("NodeJS Application".to_string())
         .interact_text()
@@ -82,7 +82,7 @@ pub fn init_new_project(default:Option<String>) {
 
     println!("Description: {}", description);
     // get projects entry point
-    entry_point = Input::with_theme(&ColorfulTheme::default())
+    let entry_point = Input::with_theme(&ColorfulTheme::default())
         .with_prompt("Default Entry Point")
         .default("index.js".to_string())
         .interact_text()
@@ -90,15 +90,21 @@ pub fn init_new_project(default:Option<String>) {
 
     println!("Entry Point: {}", entry_point);
     //get repo url
-    repo_url = Input::with_theme(&ColorfulTheme::default())
+    let repo_url: String = Input::with_theme(&ColorfulTheme::default())
         .with_prompt("Repository URL")
-        // .default("1.0.0".to_string())
+        .validate_with(|input: &String| -> Result<(), ParseError> {
+            let url = Url::parse(input.as_str().clone());
+            match url {
+                Ok(_url) => Ok(()),
+                Err(err) => Err(err),
+            }
+        })
         .interact_text()
         .unwrap();
 
     println!("Repository: {}", repo_url);
     // get author
-    author = Input::with_theme(&ColorfulTheme::default())
+    let author = Input::with_theme(&ColorfulTheme::default())
         .with_prompt("Author")
         .default("".to_string())
         .interact_text()
@@ -106,7 +112,7 @@ pub fn init_new_project(default:Option<String>) {
 
     println!("Author: {}", author);
     // get license
-    license = Input::with_theme(&ColorfulTheme::default())
+    let license = Input::with_theme(&ColorfulTheme::default())
         .with_prompt("Licence")
         .default("MIT".to_string().to_uppercase())
         .interact_text()
@@ -114,7 +120,7 @@ pub fn init_new_project(default:Option<String>) {
 
     println!("License: {}", license.to_uppercase());
     //  get is project private
-    private_input = Input::with_theme(&ColorfulTheme::default())
+    let private_input = Input::with_theme(&ColorfulTheme::default())
         .with_prompt("Private")
         .default("false".to_string())
         .interact_text()

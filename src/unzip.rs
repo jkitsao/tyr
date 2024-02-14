@@ -1,12 +1,12 @@
 use flate2::read::GzDecoder; // Add this import for Gzip support
-use indicatif::{ProgressBar,ProgressStyle};
+use indicatif::{ProgressBar, ProgressStyle};
 use std::fs;
 // use std::fs::OpenOptions;
 // use std::io::{ };
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
 // use std::io::copy;
-use std::io::{copy, BufReader,BufWriter, Write};
+use std::io::{copy, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
 //import console create
 // use crate::console;
@@ -15,14 +15,16 @@ use tar::Archive;
 // use indicatif::{HumanBytes, HumanCount, HumanDuration, HumanFloatCount};
 use std::{thread, time::Duration};
 // use clap::builder::Str;
-use ureq::Error::Status;
-use ureq::{Agent, AgentBuilder,Error};
 use crate::utils;
+use ureq::Error::Status;
+use ureq::{Agent, AgentBuilder, Error};
 
-pub fn extract_tarball_to_disk(url: &str, package_name: &str) -> Result<BTreeMap<String,Value>,String> {
+pub fn extract_tarball_to_disk(
+    url: &str,
+    package_name: &str,
+) -> Result<BTreeMap<String, Value>, String> {
     //create ureq agent
-    let agent: Agent = AgentBuilder::new()
-        .build();
+    let agent: Agent = AgentBuilder::new().build();
     // URL of the tar file
     // let url = "https://example.com/path/to/your.tar.gz";
     // let path_to_pckg="./node_tests/node_modules/"
@@ -45,7 +47,6 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) -> Result<BTreeMap
     );
 
     let response = agent.get(url).call();
-    // Create a temporary file to store the downloaded tar file
     /***
      *
      * Handle any issues encountered while downloading tar
@@ -55,6 +56,7 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) -> Result<BTreeMap
      */
     match response {
         Ok(response) => {
+            // Create a temporary file to store the downloaded tar file
             let mut temp_file = fs::File::create("./node_tests/node_modules/temp.tar.gz")
                 .expect("Failed to create temp file");
             //show download progress for tar file
@@ -107,27 +109,18 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) -> Result<BTreeMap
 
                     // Ensure the parent directory exists
                     if let Some(parent_dir) = dest_path.parent() {
-                        fs::create_dir_all(parent_dir)
-                            .expect("Failed to create parent directory");
+                        fs::create_dir_all(parent_dir).expect("Failed to create parent directory");
                     }
                     let size = entry.header().entry_size().unwrap();
                     ext_bar.enable_steady_tick(Duration::from_millis(size));
                     ext_bar.set_style(
-                        ProgressStyle::with_template("{spinner:.blue} {msg}")
+                        ProgressStyle::with_template("{spinner:.yellow} {msg}")
                             .unwrap()
                             // For more spinners check out the cli-spinners project:
                             // https://github.com/sindresorhus/cli-spinners/blob/master/spinners.json
-                            .tick_strings(&[
-                                "▹▹▹▹▹",
-                                "▸▹▹▹▹",
-                                "▹▸▹▹▹",
-                                "▹▹▸▹▹",
-                                "▹▹▹▸▹",
-                                "▹▹▹▹▸",
-                                "▪▪▪▪▪",
-                            ]),
+                            .tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ "),
                     );
-                    ext_bar.set_message("Unpacking...");
+                    // ext_bar.set_message("Unpacking...");
 
                     // ext_bar.tick();
                     // ext_bar.set_length(size);
@@ -136,7 +129,7 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) -> Result<BTreeMap
                         .unpack(&dest_path)
                         .expect("Failed to unpack tar entry");
                 });
-            ext_bar.finish_with_message("Done✅");
+            ext_bar.finish();
             // Cleanup: Remove the temporary tar file
             fs::remove_file("./node_tests/node_modules/temp.tar.gz")
                 .expect("Failed to remove temp file");
@@ -144,7 +137,8 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) -> Result<BTreeMap
             // if !Path::new(dest_folder.as_str()).exists() {
             //     fs::create_dir_all(&dest_folder).expect("we cant read the installed package");
             // }
-            let mut pckg_dest_folder = format!("./node_tests/node_modules/{}/package.json", package_name);
+            let mut pckg_dest_folder =
+                format!("./node_tests/node_modules/{}/package.json", package_name);
             //check if there's an extra path inside first
             if !Path::new(pckg_dest_folder.as_str()).exists() {
                 // expect("Failed to create destination folder");
@@ -157,15 +151,17 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) -> Result<BTreeMap
             let file = fs::File::open(pckg_dest_folder.clone()).unwrap();
             let reader = BufReader::new(file);
             // Read the JSON contents of the file and assign to Hashmap.
-            let mut json_file_data: BTreeMap<String, Value> = serde_json::from_reader(reader).unwrap();
+            let mut json_file_data: BTreeMap<String, Value> =
+                serde_json::from_reader(reader).unwrap();
             //if dep is available
             match json_file_data.contains_key("dependencies") {
                 true => {
                     // println!("Dep object detected we should append to json");
                     //update the dep object with installed package metadata
 
-                    let current_dep: Value = json_file_data.get_mut("dependencies").unwrap().clone();
-                    let res:BTreeMap<String,Value>=serde_json::from_value(current_dep).unwrap();
+                    let current_dep: Value =
+                        json_file_data.get_mut("dependencies").unwrap().clone();
+                    let res: BTreeMap<String, Value> = serde_json::from_value(current_dep).unwrap();
                     Ok(res)
                     // println!("current boolean value {} ", update);
                 }
@@ -198,7 +194,6 @@ pub fn extract_tarball_to_disk(url: &str, package_name: &str) -> Result<BTreeMap
             let message = "Failed please check your connection";
             // println!("{}",message);
             Err(message.to_string())
-
         }
     }
 }

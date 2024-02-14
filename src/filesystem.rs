@@ -12,7 +12,7 @@ use std::io::{BufReader, BufWriter, Write};
 //Generate lock files with package name,version,resolve url, and integrity checksum
 pub fn generate_lock_file(
     package: HashMap<String, Value>,
-    deps:BTreeMap<String,Value>
+    deps: BTreeMap<String, Value>,
 ) -> Result<HashMap<String, Value>, Error> {
     //model lock content
     struct LockFile {
@@ -20,14 +20,14 @@ pub fn generate_lock_file(
         version: String,
         resolved: String,
         integrity: String,
-        dependencies:Value
+        dependencies: Value,
     }
     //formatter function returns placeholders without double quotes around the name, version, resolved, and integrity
     impl LockFile {
         fn format_for_lock_file(&self) -> String {
             format!(
                 "{}: \n version {}\n  resolved {}\n  integrity {}\n dependencies \n {} \n \n",
-                self.name, self.version, self.resolved, self.integrity,self.dependencies
+                self.name, self.version, self.resolved, self.integrity, self.dependencies
             )
         }
     }
@@ -38,7 +38,7 @@ pub fn generate_lock_file(
     let integrity = dist.get("integrity").unwrap();
     let name = package.get("name").unwrap();
     // let contains_dependencies = deps.contains_key("dependencies");
-    let mut dependencies= json!(deps);
+    let dependencies = json!(deps);
     //
     // if contains_dependencies {
     //     dependencies= json!(deps.get("dependencies").unwrap())
@@ -67,7 +67,7 @@ pub fn generate_lock_file(
             .to_string(),
         integrity: integrity.to_string(),
         resolved: tarball.to_string(),
-        dependencies
+        dependencies,
     };
     // let name = format!("{}@{}", name, version);
     // let dep_name = combine_dependency_and_version(&name);
@@ -191,7 +191,7 @@ fn update_dep_obj(
         }
     }
 }
-fn combine_dependency_and_version(input: &str) -> String {
+fn _combine_dependency_and_version(input: &str) -> String {
     let mut parts = input.splitn(2, '@'); // Split at the first '@'
 
     if let (Some(name), Some(version)) = (parts.next(), parts.next()) {

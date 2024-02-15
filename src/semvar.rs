@@ -1,7 +1,6 @@
-// use nodejs_semver::Version;
-// use regex::Regex;
-//resolve semver versions from the name
-//
+use ::serde_json::Value;
+use ::std::collections::HashMap;
+use nodejs_semver::{Range, Version};
 pub fn split_package_version(name: &str) -> (String, String) {
     if name.starts_with('@') {
         // If the string starts with '@', skip the first '@'
@@ -33,4 +32,21 @@ fn convert_to_version(input: &str) -> String {
     // Return the input string as is if it doesn't meet the condition
     input.to_string()
 }
-//
+//resolve semver range
+pub fn resolve_semvar_range(
+    input: &str,
+    versions: HashMap<String, Value>,
+) -> Result<HashMap<String, Value>, String> {
+    //get the best version that satisfies the given input
+    // Iterate over everything.
+    for (key, value) in &versions {
+        let version: Version = key.parse().unwrap();
+        let range: Range = input.trim_matches('"').parse().unwrap();
+        if version.satisfies(&range) {
+            println!("{key}");
+            let data: HashMap<String, Value> = serde_json::from_value(value.clone()).unwrap();
+            return Ok(data);
+        }
+    }
+    Ok(versions)
+}

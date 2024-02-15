@@ -79,7 +79,7 @@ pub fn resolve_package_from_registry(dep: String, update: bool) {
     // get the package name and version from user arg
     let (name, version) = semvar::split_package_version(&dep);
     //
-    dbg!("installing: {}", version.clone());
+    // dbg!("installing: {}", version.clone());
     //call installer function
     let next_deps = package_installer(name.clone(), version, update.clone());
     //iterate over next deps
@@ -134,11 +134,42 @@ fn package_installer(
             let text_response: String = response.into_string().unwrap();
             let resolved: HashMap<String, Value> =
                 serde_json::from_str(&text_response.as_ref()).unwrap();
-            //
-            dbg!(resolved.clone());
-            let name = resolved.get("name").unwrap();
-            //resolved above also has a list of deps
-            // println!("resolved: {:?}",resolved);
+            let pckg_data: Value;
+            /*
+             * below we have to option from the response and into resolved
+             * one resolved with dist the latter with versions. for dist continue normally for versions
+             * resolve range that satisfies
+             */
+            //deal with dist first
+            let pckg_has_versions = resolved.contains_key("versions");
+            let _pckg_dist = resolved.contains_key("dist");
+            //get versions
+            if pckg_has_versions {
+                let versions: HashMap<String, Value> =
+                    serde_json::from_value(resolved.get("versions").unwrap().clone()).unwrap();
+                let data = semvar::resolve_semvar_range(version.clone().as_str(), versions.clone());
+                //update pack_data to equal semver_resolve return value
+                match data {
+                    Ok(res) => {
+                        let data = res.get("dist").unwrap().clone();
+                        pckg_data = data.to_owned();
+                    }
+                    Err(err) => {
+                        eprint!("{err}");
+                        pckg_data = resolved.get("dist").unwrap().clone();
+                    }
+                }
+                // dbg!(&versions);
+            } else {
+                //update pckg_data to dist returned
+                pckg_data = resolved.get("dist").unwrap().clone();
+            }
+
+            // dbg!(resolved.clone());
+            // let name = pckg_data.get("name").unwrap();
+            let _pckg_map: HashMap<String, Value> =
+                serde_json::from_value(pckg_data.clone()).unwrap();
+            // println!("resolved: {:?}", pckg_data);
             let next_dependencies = match resolved.contains_key("dependencies") {
                 true => {
                     let res: BTreeMap<String, Value> =
@@ -147,27 +178,25 @@ fn package_installer(
                     Ok(res)
                 }
                 false => {
-                    let version = resolved.get("version").unwrap();
-                    let msg = format!("Resolving dependencies for: {}@{}", name.clone(), version);
+                    // let version = resolved.get("version").unwrap();
+                    let msg = format!("Resolving dependencies for: {}", name.clone());
                     Err(msg)
                 }
             };
             // dbg!(next_depss.unwrap().clone());
-            let dist = resolved.get("dist").unwrap();
+            let dist = pckg_data.clone();
             let tarball = dist.get("tarball").unwrap();
-            let _integrity = dist.get("integrity").unwrap();
+            let name = resolved.get("name").unwrap();
+            // let _integrity = dist.get("integrity").unwrap();
             //Download and extract to file
             let _deps =
                 unzip::extract_tarball_to_disk(tarball.as_str().unwrap(), name.as_str().unwrap());
             match next_dependencies {
                 Ok(dep) => {
-                    // let bar = ProgressBar::new(&dep.len());
-                    //here we need to iterate over deps
-                    //to install all dependencies
-                    // dbg!(dep.clone());
-                    //create/update a lock file
+                    let _pckg_map: HashMap<String, Value> =
+                        serde_json::from_value(pckg_data.clone()).unwrap();
                     let res_package =
-                        filesystem::generate_lock_file(resolved.clone(), dep.clone()).unwrap();
+                        filesystem::generate_lock_file(resolved, dep.clone()).unwrap();
                     //use the values returned to update package.json
                     filesystem::update_package_jason_dep(res_package, update).unwrap();
                     Ok(dep)

@@ -981,6 +981,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "node-semver"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "84f390c1756333538f2aed01cf280a56bc683e199b9804a504df6e7320d40116"
+dependencies = [
+ "bytecount",
+ "miette",
+ "nom",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "nodejs-semver"
 version = "3.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1858,6 +1871,7 @@ dependencies = [
  "indicatif",
  "is-even",
  "itertools 0.12.0",
+ "node-semver",
  "nodejs-semver",
  "owo-colors",
  "qndr",

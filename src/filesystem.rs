@@ -1,12 +1,10 @@
-use serde_json::Value;
-use std::collections::HashMap;
-// use std::fs;
 use clap::Error;
 use serde_json::json;
+use serde_json::Value;
 use std::collections::BTreeMap;
+use std::collections::HashMap;
 use std::fs;
 use std::fs::OpenOptions;
-// use std::io::Write;
 use std::io;
 use std::io::{BufReader, BufWriter, Write};
 //Generate lock files with package name,version,resolve url, and integrity checksum
@@ -22,7 +20,8 @@ pub fn generate_lock_file(
         integrity: String,
         dependencies: Value,
     }
-    //formatter function returns placeholders without double quotes around the name, version, resolved, and integrity
+    //formatter function returns placeholders without double
+    //quotes around the name, version, resolved, and integrity
     impl LockFile {
         fn format_for_lock_file(&self) -> String {
             format!(
@@ -37,22 +36,14 @@ pub fn generate_lock_file(
     let tarball = dist.get("tarball").unwrap();
     let integrity = dist.get("integrity").unwrap();
     let name = package.get("name").unwrap();
-    // let contains_dependencies = deps.contains_key("dependencies");
     let dependencies = json!(deps);
-    //
-    // if contains_dependencies {
-    //     dependencies= json!(deps.get("dependencies").unwrap())
-    // }
-
-    // let next_deps = deps.get("dependencies").expect("Cannot get deps from next pckg");
-    //create a lock file with fs package and write to it
     let mut path_name = "./node_tests/tyr.lock".to_string();
     // fs::File::create(path)
     let mut file = OpenOptions::new()
         .append(true)
         .create(true)
         .open(&mut path_name)
-        .expect("failed to create a package.lock file");
+        .expect("failed to create a tyr.lock file");
     //construct a new lock object with package metadata
     let lock = LockFile {
         name: name
@@ -60,34 +51,23 @@ pub fn generate_lock_file(
             .replace("\"", "")
             .trim_matches('"')
             .to_string(),
-        version: version
-            .to_string()
-            // .replace("\"", "")
-            // .trim_matches('"')
-            .to_string(),
+        version: version.to_string().to_string(),
         integrity: integrity.to_string(),
         resolved: tarball.to_string(),
         dependencies,
     };
-    // let name = format!("{}@{}", name, version);
-    // let dep_name = combine_dependency_and_version(&name);
-    // let formatted = lock.format_for_lock_file();
     write!(file, "{}", &lock.format_for_lock_file())?;
-    // println!("Saved lockfile");
-    // update_package_jason_dep(package).unwrap();
 
     Ok(package)
 }
 //update or create the dependencies on package.json after updating lock
-//function to update dependency packages after installation
+//Basically updates dependency packages after installation
 //first model the dep struct and package struct
 pub fn update_package_jason_dep(package: HashMap<String, Value>, update: bool) -> io::Result<()> {
     //read contents of the file
     let path_name = "./node_tests/package.json".to_string();
     let file = fs::File::open(path_name).unwrap();
     let reader = BufReader::new(file);
-    //
-    // let mut update = true;
     // Read the JSON contents of the file and assign to Hashmap.
     let json_file_data: BTreeMap<String, Value> = serde_json::from_reader(reader)?;
 
@@ -109,12 +89,8 @@ pub fn update_package_jason_dep(package: HashMap<String, Value>, update: bool) -
     // let is_dep_init = json_file_data.contains_key("dependencies");
     match json_file_data.contains_key("dependencies") {
         true => {
-            // println!("Dep object detected we should append to json");
             //update the dep object with installed package metadata
             update_dep_obj(json_file_data, name.clone(), version, update).unwrap();
-            // update = false;
-            // resolve_next_dep(name.to_string());
-            // println!("current boolean value {} ", update);
         }
         false => {
             println!("Dep object not found we should create then add");
@@ -122,7 +98,6 @@ pub fn update_package_jason_dep(package: HashMap<String, Value>, update: bool) -
             create_dep_obj(json_file_data, name, version).unwrap();
         }
     }
-    // println!("is dependencies initiated in project {:?}", is_dep_init);
     Ok(())
 }
 // create dep object on the package.json file with new package metadata
@@ -137,7 +112,6 @@ fn create_dep_obj(
             name:version
         }
     });
-    // metadata.insert(k, v)
     let dep_value: BTreeMap<String, Value> = serde_json::from_value(value).unwrap();
     //merge the 2 data structures
     metadata.extend(dep_value);
@@ -146,7 +120,6 @@ fn create_dep_obj(
     let file = fs::File::create(&mut path_name).expect("failed to create a package.json file");
     // write to package.json file
     let mut writer = BufWriter::new(file);
-    // fs::write(&mut path_name, b"Lorem ipsum").expect("failed to write to package.json file");
     serde_json::to_writer_pretty(&mut writer, &result)?;
     writer.flush()?;
     Ok(())
@@ -173,7 +146,6 @@ fn update_dep_obj(
             if let Some(x) = metadata.get_mut("dependencies") {
                 *x = json!(temp_json);
             };
-            // println!("metadata {:?}", metadata);
             //write output to file
             //serialize first
             let results = json!(metadata);
@@ -185,7 +157,6 @@ fn update_dep_obj(
             Ok(name)
         }
         false => {
-            // println!("not updating dep");
             // dependency object wont be updated
             Ok("error".to_string())
         }

@@ -39,14 +39,27 @@ pub fn resolve_semvar_range(
 ) -> Result<HashMap<String, Value>, String> {
     //get the best version that satisfies the given input
     // Iterate over everything.
+    // let e = extract_right_side(input);
+    // println!("user input is: {e}");
     for (key, value) in &versions {
         let version: Version = key.parse().unwrap();
-        let range: Range = input.trim_matches('"').parse().unwrap();
+        let range: Range = extract_right_side(input).trim_matches('"').parse().unwrap();
         if version.satisfies(&range) {
-            println!("{key}");
+            // println!("{key}");
             let data: HashMap<String, Value> = serde_json::from_value(value.clone()).unwrap();
             return Ok(data);
         }
     }
     Ok(versions)
+}
+fn extract_right_side(input_str: &str) -> String {
+    // Check if the input string contains ':'
+    if let Some(index) = input_str.find(':') {
+        // Split the string by ':' and take the second part
+        let right_side = &input_str[index + 1..].trim();
+        return right_side.to_string();
+    }
+
+    // If the input string does not contain ':', return it as is
+    input_str.to_string()
 }

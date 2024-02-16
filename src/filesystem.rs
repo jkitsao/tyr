@@ -31,12 +31,20 @@ pub fn generate_lock_file(
         }
     }
     //get required values from hashmap
+    // dbg!(deps.clone());
     let dist = package.get("dist").unwrap();
     let version = package.get("version").unwrap();
     let tarball = dist.get("tarball").unwrap();
     let integrity = dist.get("integrity").unwrap();
     let name = package.get("name").unwrap();
-    let dependencies = json!(deps);
+    let dependencies: Value;
+    //check to see is dep contains completed key
+    if !deps.contains_key("status") {
+        dependencies = json!(deps);
+    } else {
+        dependencies = json!({})
+    }
+    // dbg!(dependencies.clone());
     let mut path_name = "./node_tests/tyr.lock".to_string();
     // fs::File::create(path)
     let mut file = OpenOptions::new()

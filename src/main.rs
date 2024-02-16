@@ -1,5 +1,3 @@
-// use clap::builder::Str;
-// use clap::Error;
 use ctrlc;
 mod cli;
 mod filesystem;
@@ -9,32 +7,17 @@ mod install;
 mod semvar;
 mod unzip;
 mod utils;
-// use serde_json::json;
 use std::collections::{BTreeMap, HashMap};
 mod banner;
 mod reconsole;
-// mod dialogue;
-
-use std::process::ExitCode;
-
-use serde_json::Value;
-// use std::collections::HashMap;
-// use std::fmt::Debug;
-// use std::env;
 use console::{style, Emoji, Term};
 use indicatif::{HumanDuration, ProgressBar, ProgressStyle};
-// use std::fs;
-// use std::io::BufReader;
-// use std::path::Path;
+use serde_json::Value;
+use std::process::ExitCode;
 use std::time::Instant;
-// use ureq::Error;
-
-// use std::ops::ControlFlow;
-// use std::path;
-//for printing to the screen
-static LOOKING_GLASS: Emoji<'_, '_> = Emoji("🔍  ", "");
-static TRUCK: Emoji<'_, '_> = Emoji("🚚  ", "");
-static CLIP: Emoji<'_, '_> = Emoji("🔗  ", "");
+static _LOOKING_GLASS: Emoji<'_, '_> = Emoji("🔍  ", "");
+static _TRUCK: Emoji<'_, '_> = Emoji("🚚  ", "");
+static _CLIP: Emoji<'_, '_> = Emoji("🔗  ", "");
 static PAPER: Emoji<'_, '_> = Emoji("📃  ", "");
 static SPARKLE: Emoji<'_, '_> = Emoji("✨ ", ":-)");
 //update structure
@@ -78,10 +61,10 @@ fn main() -> ExitCode {
 pub fn resolve_package_from_registry(dep: String, update: bool) {
     // get the package name and version from user arg
     let (name, version) = semvar::split_package_version(&dep);
-    //
-    // dbg!("installing: {}", version.clone());
     //call installer function
     let next_deps = package_installer(name.clone(), version, update.clone());
+    //check next deps for "status" key and "completed" value
+    //if available no more deps are present
     //iterate over next deps
     if let Ok(dependencies) = next_deps {
         //play with progress bar for deps
@@ -100,31 +83,32 @@ pub fn resolve_package_from_registry(dep: String, update: bool) {
             .progress_chars("** "),
         );
         for (key, value) in dependencies.iter() {
-            let result = format!("{}@{}", key, value);
-            let f = format!("[+] {}", result.clone());
-            pb.inc(1);
-            pb.set_prefix(f);
-            // Don't update package.json
-            // println!("the result is {}", result);
-            resolve_package_from_registry(result, false);
+            if key.clone() != String::from("status") {
+                let result = format!("{}@{}", key, value);
+                let f = format!("[+] {}", result.clone());
+                pb.inc(1);
+                pb.set_prefix(f);
+                // Don't update package.json
+                // println!("the result is {}", result);
+                //check if package has been resolved first and use that
+                let should_install = utils::should_resolve_dependency(result.clone());
+                if should_install {
+                    resolve_package_from_registry(result, false);
+                }
+            }
         }
         pb.finish();
     } else if let Err(err) = next_deps {
-        // eprintln!(" {:?}", err);
         println!("{} {}", PAPER, style(err).bright().yellow());
     }
 }
 
-// install package to disk
-//installer function that resolves remote packages and arranges to disk
-// static  mut is_update=true;
-
+//Installs remote packages and arranges to disk(Node_modules)
 fn package_installer(
     name: String,
     version: String,
     update: bool,
 ) -> Result<BTreeMap<String, Value>, String> {
-    // TODO: have it return the next dep to be resolved
     // call download package from registry function with package name and version
     let res = http::get_response(name.as_str(), version.as_str());
     //Match for response resolved or error
@@ -152,59 +136,84 @@ fn package_installer(
                 match data {
                     Ok(res) => {
                         let data = res.get("dist").unwrap().clone();
-                        pckg_data = data.to_owned();
+                        pckg_data = data;
                     }
                     Err(err) => {
                         eprint!("{err}");
                         pckg_data = resolved.get("dist").unwrap().clone();
                     }
                 }
-                // dbg!(&versions);
             } else {
                 //update pckg_data to dist returned
                 pckg_data = resolved.get("dist").unwrap().clone();
             }
-
-            // dbg!(resolved.clone());
-            // let name = pckg_data.get("name").unwrap();
             let _pckg_map: HashMap<String, Value> =
                 serde_json::from_value(pckg_data.clone()).unwrap();
             // println!("resolved: {:?}", pckg_data);
-            let next_dependencies = match resolved.contains_key("dependencies") {
-                true => {
-                    let res: BTreeMap<String, Value> =
-                        serde_json::from_value(resolved.get("dependencies").unwrap().to_owned())
+            let next_deps = if resolved.contains_key("dependencies") {
+                let res: BTreeMap<String, Value> =
+                    serde_json::from_value(resolved.get("dependencies").unwrap().to_owned())
+                        .unwrap();
+                res
+            } else {
+                if resolved.contains_key("versions") {
+                    // println!("results: {:?}", resolved);
+                    let versions: HashMap<String, Value> =
+                        serde_json::from_value(resolved.get("versions").unwrap().clone()).unwrap();
+                    let data =
+                        semvar::resolve_semvar_range(version.clone().as_str(), versions.clone())
                             .unwrap();
-                    Ok(res)
-                }
-                false => {
-                    // let version = resolved.get("version").unwrap();
-                    let msg = format!("Resolving dependencies for: {}", name.clone());
-                    Err(msg)
+                    // dbg!(data.clone());
+                    //check if dep object is present
+                    let is_deps = data.contains_key("dependencies");
+                    match is_deps {
+                        true => {
+                            let b: BTreeMap<String, Value> =
+                                serde_json::from_value(data.get("dependencies").unwrap().clone())
+                                    .unwrap();
+                            b
+                        }
+                        false => {
+                            // Create a BTreeMap with String keys and Value values
+                            let mut btree: BTreeMap<String, Value> = BTreeMap::new();
+                            btree.insert("status".to_string(), serde_json::json!("completed"));
+                            btree
+                        }
+                    }
+                } else {
+                    // Create a BTreeMap with String keys and Value values
+                    let mut btree: BTreeMap<String, Value> = BTreeMap::new();
+                    btree.insert("status".to_string(), serde_json::json!("completed"));
+                    btree
                 }
             };
             // dbg!(next_depss.unwrap().clone());
             let dist = pckg_data.clone();
             let tarball = dist.get("tarball").unwrap();
             let name = resolved.get("name").unwrap();
-            // let _integrity = dist.get("integrity").unwrap();
             //Download and extract to file
             let _deps =
                 unzip::extract_tarball_to_disk(tarball.as_str().unwrap(), name.as_str().unwrap());
-            match next_dependencies {
-                Ok(dep) => {
-                    let _pckg_map: HashMap<String, Value> =
-                        serde_json::from_value(pckg_data.clone()).unwrap();
-                    let res_package =
-                        filesystem::generate_lock_file(resolved, dep.clone()).unwrap();
-                    //use the values returned to update package.json
-                    filesystem::update_package_jason_dep(res_package, update).unwrap();
-                    Ok(dep)
-                }
-                Err(value) => {
-                    // eprintln!("{}",value);
-                    Err(value.to_string())
-                }
+            let _pckg_map: HashMap<String, Value> =
+                serde_json::from_value(pckg_data.clone()).unwrap();
+            //check value of resolve first if it has versions parse
+            //else
+            if resolved.contains_key("versions") {
+                let versions: HashMap<String, Value> =
+                    serde_json::from_value(resolved.get("versions").unwrap().clone()).unwrap();
+                let data = semvar::resolve_semvar_range(version.clone().as_str(), versions.clone())
+                    .unwrap();
+                // let b: BTreeMap<String, Value> = data.into_iter().collect();
+                let res_package = filesystem::generate_lock_file(data, next_deps.clone()).unwrap();
+                //use the values returned to update package.json
+                filesystem::update_package_jason_dep(res_package, update).unwrap();
+                Ok(next_deps)
+            } else {
+                let res_package =
+                    filesystem::generate_lock_file(resolved, next_deps.clone()).unwrap();
+                //use the values returned to update package.json
+                filesystem::update_package_jason_dep(res_package, update).unwrap();
+                Ok(next_deps)
             }
         }
         Err(err) => Err(err.to_string()),

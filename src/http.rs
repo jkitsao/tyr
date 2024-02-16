@@ -87,15 +87,8 @@ pub fn get_response(name: &str, version: &str) -> Result<Response, Error> {
     } else {
         //fetch a package and a list of dependencies
         //we'll need to iter the deps and find a range that satisfies the aversion passed
-        print!("version needs to be parsed differently for suree ***** theres an error bellow most likely \n");
-        // let url_encoded_name = form_urlencoded::byte_serialize(name.as_bytes()).collect::<String>();
-        let url = format!(
-            "{}/{}/",
-            NPM_REGISTRY_URL,
-            name,
-            // remove_non_numbers(version)
-        );
-        println!("URL: {}", url);
+        let url = format!("{}/{}/", NPM_REGISTRY_URL, name,);
+        // println!("URL: {}", url);
 
         let agent = Agent::new();
         let request = agent.get(&url).set(

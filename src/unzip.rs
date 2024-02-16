@@ -1,23 +1,15 @@
-use flate2::read::GzDecoder; // Add this import for Gzip support
-use indicatif::{ProgressBar, ProgressStyle};
-use std::fs;
-// use std::fs::OpenOptions;
-// use std::io::{ };
-use serde_json::{json, Value};
-use std::collections::BTreeMap;
-// use std::io::copy;
-use std::io::{copy, BufReader, BufWriter, Write};
-use std::path::{Path, PathBuf};
-//import console create
-// use crate::console;
-use tar::Archive;
-// use ureq;
-// use indicatif::{HumanBytes, HumanCount, HumanDuration, HumanFloatCount};
-use std::{thread, time::Duration};
-// use clap::builder::Str;
 use crate::utils;
+use flate2::read::GzDecoder;
+use indicatif::{ProgressBar, ProgressStyle};
+use serde_json::Value;
+use std::collections::BTreeMap;
+use std::fs;
+use std::io::{copy, BufReader};
+use std::path::{Path, PathBuf};
+use std::{thread, time::Duration};
+use tar::Archive;
 use ureq::Error::Status;
-use ureq::{Agent, AgentBuilder, Error};
+use ureq::{Agent, AgentBuilder};
 
 pub fn extract_tarball_to_disk(
     url: &str,
@@ -25,21 +17,12 @@ pub fn extract_tarball_to_disk(
 ) -> Result<BTreeMap<String, Value>, String> {
     //create ureq agent
     let agent: Agent = AgentBuilder::new().build();
-    // URL of the tar file
-    // let url = "https://example.com/path/to/your.tar.gz";
-    // let path_to_pckg="./node_tests/node_modules/"
-
-    // Destination folder
-    // let dest_folder = "./node_tests/node_modules";
     let dest_folder = format!("./node_tests/node_modules/{}", package_name);
-
     // Create the destination folder if it doesn't exist
     if !Path::new(dest_folder.as_str()).exists() {
         fs::create_dir_all(&dest_folder).expect("Failed to create destination folder");
     }
-
     // Download the tar file using ureq
-    // let bar = ProgressBar::new(1000).with_prefix("Downloading");
     let bar = ProgressBar::new(!0).with_prefix("Downloading").with_style(
         ProgressStyle::default_spinner()
             .template("{prefix:>12.bright.cyan} {spinner} {msg:.cyan}")
@@ -47,7 +30,7 @@ pub fn extract_tarball_to_disk(
     );
 
     let response = agent.get(url).call();
-    /***
+    /*
      *
      * Handle any issues encountered while downloading tar
      * be able to show progress information of the download
@@ -79,7 +62,6 @@ pub fn extract_tarball_to_disk(
             }
             let mut res = bar.wrap_read(response.into_reader());
             // Copy the response body to the temporary file
-            // bar.finish_and_clear();
             copy(&mut res, &mut temp_file).expect("Failed to copy response body to file");
             bar.finish_and_clear();
             // Open the downloaded tar file
@@ -90,9 +72,7 @@ pub fn extract_tarball_to_disk(
             // Create a tar archive from the file
             let mut archive = Archive::new(tar_reader);
             //show progress update on this
-            //extraction bar
             let ext_bar = ProgressBar::new_spinner();
-            // ** we also remove the default /package from the tar returned by NPM**
             archive
                 .entries()
                 .expect("Failed to get tar entries")
@@ -102,11 +82,11 @@ pub fn extract_tarball_to_disk(
                     // Handle variations in the directory structure
                     let entry_path = entry.path().expect("Failed to get entry path");
                     let relative_path = entry_path
+                        // ** we also need to remove the default /package from the tar returned by NPM**
                         .strip_prefix("package/")
                         .unwrap_or_else(|_| &entry_path); // Use original path if strip_prefix fails
 
                     let dest_path = PathBuf::from(&dest_folder).join(relative_path);
-
                     // Ensure the parent directory exists
                     if let Some(parent_dir) = dest_path.parent() {
                         fs::create_dir_all(parent_dir).expect("Failed to create parent directory");
@@ -120,16 +100,13 @@ pub fn extract_tarball_to_disk(
                             // https://github.com/sindresorhus/cli-spinners/blob/master/spinners.json
                             .tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ "),
                     );
-                    // ext_bar.set_message("Unpacking...");
-
-                    // ext_bar.tick();
-                    // ext_bar.set_length(size);
+                    ext_bar.set_message("Unpacking");
                     // Unpack the entry to the adjusted destination path
                     entry
                         .unpack(&dest_path)
                         .expect("Failed to unpack tar entry");
                 });
-            ext_bar.finish();
+            ext_bar.finish_with_message("✔");
             // Cleanup: Remove the temporary tar file
             fs::remove_file("./node_tests/node_modules/temp.tar.gz")
                 .expect("Failed to remove temp file");
@@ -158,23 +135,19 @@ pub fn extract_tarball_to_disk(
                 true => {
                     // println!("Dep object detected we should append to json");
                     //update the dep object with installed package metadata
-
                     let current_dep: Value =
                         json_file_data.get_mut("dependencies").unwrap().clone();
                     let res: BTreeMap<String, Value> = serde_json::from_value(current_dep).unwrap();
                     Ok(res)
-                    // println!("current boolean value {} ", update);
                 }
                 false => {
                     let message = "Dep object not found after unzip";
                     // println!("{}",message);
                     Err(message.to_string())
                     // probably the first package
-                    // crate::filesystem::create_dep_obj(json_file_data, name, version).unwrap();
                 }
             }
         }
-
         Err(Status(503, r)) | Err(Status(429, r)) => {
             for _ in 1..4 {
                 let retry: Option<u64> = r.header("retry-after").and_then(|h| h.parse().ok());
@@ -184,10 +157,8 @@ pub fn extract_tarball_to_disk(
             }
 
             let message = "Failed please check your connection";
-            // println!("{}",message);
             Err(message.to_string())
         }
-        // };
         Err(_) => {
             /* some kind of io/transport error */
             // eprintln!("Failed please check your connection");

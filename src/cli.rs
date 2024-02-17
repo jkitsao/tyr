@@ -2,6 +2,7 @@ use crate::init;
 // use crate::banner::draw_banner;
 use crate::install;
 use crate::resolve_package_from_registry;
+use crate::scripts;
 use clap::{Parser, Subcommand};
 use console::{style, Emoji};
 // use crate::dialogue;
@@ -36,6 +37,12 @@ enum Commands {
     /// resolves dependencies listed in both the tyr.lock file and package.json file.
     /// It installs the necessary packages into the project's node_modules directory.
     Install,
+    /// run specified scripts
+    Run {
+        /// script name specified on Package.json file
+        #[arg(required = true)]
+        name: Vec<String>,
+    },
 }
 //
 static TRUCK: Emoji<'_, '_> = Emoji("🚚  ", "");
@@ -60,6 +67,10 @@ pub fn initialize_command_arguments() {
             // println!("Initializing: {}",name.unwrap().clone());
             init::init_new_project(name);
             // dialogue::dialogue();
+        }
+        Commands::Run { name } => {
+            //
+            let _ = scripts::execute_script(name[0].as_str());
         }
         Commands::Install => {
             println!("Installing Dependencies");

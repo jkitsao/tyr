@@ -4,6 +4,7 @@ mod filesystem;
 mod http;
 mod init;
 mod install;
+mod scripts;
 mod semvar;
 mod unzip;
 mod utils;

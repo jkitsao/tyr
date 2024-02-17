@@ -15,4 +15,14 @@ target/
 
 norrin/
 
+# custom
+
 node_tests/
+
+index.js
+
+node_modules
+
+tyr.lock
+
+package.json

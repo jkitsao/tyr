@@ -140,7 +140,7 @@ pub fn init_new_project(_default: Option<String>) {
     );
 
     // now I can mess with the file system
-    let dir_name = "./node_tests/".to_string();
+    let dir_name = "./".to_string();
     // first build a directory for the project
     //format project name
     fs::create_dir_all(dir_name).expect("failed to create directory");
@@ -150,7 +150,7 @@ pub fn init_new_project(_default: Option<String>) {
 }
 // create and save metadata to package.json
 fn create_package_json_file(project: Project) -> io::Result<()> {
-    let mut path_name = "./node_tests/package.json".to_string();
+    let mut path_name = "./package.json".to_string();
     //check if package file is available
     let file = fs::File::create(&mut path_name).expect("failed to create a package.json file");
     // use serde json create to create a json...

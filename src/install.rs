@@ -17,26 +17,26 @@ use std::fs;
 // use  crate::resolve_package_from_registry;
 // use yarn_lock_parser::{parse_str, Entry};
 use serde_json;
-use serde_json::{ Value};
+use serde_json::Value;
 use std::io::BufReader;
 // use crate::resolve_package_from_registry;
 
 // Step 1: Load Entries from Lockfile
-pub fn load_entries_from_lockfile(lockfile_path: &str)  {
+pub fn load_entries_from_lockfile(lockfile_path: &str) {
     // Implement logic to read and parse the lockfile
     // Return a HashMap with dependency names as keys and versions as values
     // Example: {"dependency1": "1.2.3", "dependency2": "4.5.6", ...}
     //read package json file metadata
-    let path_name = "./node_tests/package.json".to_string();
+    let path_name = "./package.json".to_string();
     let file = fs::File::open(path_name).unwrap();
     let reader = BufReader::new(file);
     let json_file_data: HashMap<String, Value> = serde_json::from_reader(reader).unwrap();
     //get dependency from json structure
-    match json_file_data.contains_key("dependencies"){
+    match json_file_data.contains_key("dependencies") {
         //if  not true dependency object is not available
         true => {
-            let value =json_file_data.get("dependencies").unwrap();
-            let json_deps:HashMap<String,Value>=serde_json::from_value(value.clone()).unwrap();
+            let value = json_file_data.get("dependencies").unwrap();
+            let json_deps: HashMap<String, Value> = serde_json::from_value(value.clone()).unwrap();
             //format and flatten to a vec string@version
             let flattened_json_packages: Vec<String> = json_deps
                 .iter()
@@ -62,11 +62,12 @@ pub fn load_entries_from_lockfile(lockfile_path: &str)  {
             let flattened_lock_packages = flatten_packages(&packages);
             // println!("flattened package json: {:?} and locks are {:?}",flattened_json_packages,flattened_lock_packages);
             //turn both values to sets and compare differences
-            let lock_file_set:HashSet<String>=flattened_lock_packages.into_iter().collect();
-            let json_data_set:HashSet<String> =flattened_json_packages.into_iter().collect();
+            let lock_file_set: HashSet<String> = flattened_lock_packages.into_iter().collect();
+            let json_data_set: HashSet<String> = flattened_json_packages.into_iter().collect();
             // Symmetric difference of hashsets
-            let results:HashSet<&String> = json_data_set.symmetric_difference(&lock_file_set).collect();
-            println!("The sym difference is: {:?}",results)
+            let results: HashSet<&String> =
+                json_data_set.symmetric_difference(&lock_file_set).collect();
+            println!("The sym difference is: {:?}", results)
             // let result =Vec::from_iter(res);
             //
             // for pckg in results {
@@ -74,7 +75,7 @@ pub fn load_entries_from_lockfile(lockfile_path: &str)  {
             // }
         }
         false => {
-          println!("Cannot find dependencies to install, Check your package.json file")
+            println!("Cannot find dependencies to install, Check your package.json file")
         }
     }
 }
@@ -101,8 +102,8 @@ fn remove_non_numbers(input: &str) -> String {
 
 // // Example Usage
 // fn install() {
-//     let lockfile_path = "./node_tests/tyr.lock";
-//     let manifest_path = "./node_tests/package.json";
+//     let lockfile_path = "./tyr.lock";
+//     let manifest_path = "./package.json";
 
 //     let lockfile_entries = load_entries_from_lockfile(lockfile_path);
 //     let manifest_entries = read_manifest_files(manifest_path);
@@ -137,7 +138,8 @@ fn parse_lock_file(lock_file_content: &str) -> HashMap<String, Package> {
                 packages.insert(current_package.clone(), package);
                 current_package_data.clear();
             }
-            current_package = trimmed_line[..trimmed_line.len() - 1].to_string(); // Remove trailing colon
+            current_package = trimmed_line[..trimmed_line.len() - 1].to_string();
+        // Remove trailing colon
         } else {
             current_package_data.push(trimmed_line.to_string());
         }
@@ -168,11 +170,14 @@ fn parse_package_data(data: &str) -> Package {
             continue;
         }
         if parsing_dependencies {
-            if let Ok(deps) = serde_json::from_str::<HashMap<String,String>>(trimmed_line) {
+            if let Ok(deps) = serde_json::from_str::<HashMap<String, String>>(trimmed_line) {
                 dependencies.extend(deps);
                 for (_, value) in dependencies.iter_mut() {
                     // Remove non-number characters from the value
-                    *value = value.chars().filter(|c| c.is_digit(10) || *c == '.').collect();
+                    *value = value
+                        .chars()
+                        .filter(|c| c.is_digit(10) || *c == '.')
+                        .collect();
                 }
             }
         } else {

@@ -7,6 +7,7 @@ use std::fs;
 use std::io;
 use std::io::{copy, BufReader};
 use std::path::{Path, PathBuf};
+//
 
 // use std::io::;
 // use std::path::PathBuf;
@@ -29,12 +30,12 @@ pub fn visit_dir(path_name: String) -> io::Result<String> {
 pub fn should_resolve_dependency(package: String) -> bool {
     let (name, version) = semvar::split_package_version(&package.as_str());
 
-    let dest_folder = format!("./node_tests/node_modules/{}", name);
+    let dest_folder = format!("./node_modules/{}", name);
     //check if exact package has been installed
     // let b: bool = Path::new(dest_folder.as_str()).is_dir();
     if Path::new(dest_folder.as_str()).is_dir() {
         // check firt on file system
-        let mut pckg_dest_folder = format!("./node_tests/node_modules/{}/package.json", name);
+        let mut pckg_dest_folder = format!("./node_modules/{}/package.json", name);
         //check if there's an extra path inside first
         if !Path::new(pckg_dest_folder.as_str()).exists() {
             // expect("Failed to create destination folder");

@@ -45,7 +45,7 @@ pub fn generate_lock_file(
         dependencies = json!({})
     }
     // dbg!(dependencies.clone());
-    let mut path_name = "./node_tests/tyr.lock".to_string();
+    let mut path_name = "./tyr.lock".to_string();
     // fs::File::create(path)
     let mut file = OpenOptions::new()
         .append(true)
@@ -73,7 +73,7 @@ pub fn generate_lock_file(
 //first model the dep struct and package struct
 pub fn update_package_jason_dep(package: HashMap<String, Value>, update: bool) -> io::Result<()> {
     //read contents of the file
-    let path_name = "./node_tests/package.json".to_string();
+    let path_name = "./package.json".to_string();
     let file = fs::File::open(path_name).unwrap();
     let reader = BufReader::new(file);
     // Read the JSON contents of the file and assign to Hashmap.
@@ -124,7 +124,7 @@ fn create_dep_obj(
     //merge the 2 data structures
     metadata.extend(dep_value);
     let result = json!(metadata);
-    let mut path_name = "./node_tests/package.json".to_string();
+    let mut path_name = "./package.json".to_string();
     let file = fs::File::create(&mut path_name).expect("failed to create a package.json file");
     // write to package.json file
     let mut writer = BufWriter::new(file);
@@ -157,7 +157,7 @@ fn update_dep_obj(
             //write output to file
             //serialize first
             let results = json!(metadata);
-            let mut path_name = "./node_tests/package.json".to_string();
+            let mut path_name = "./package.json".to_string();
             let file =
                 fs::File::create(&mut path_name).expect("failed to create a package.json file");
             let mut writer = BufWriter::new(file);

@@ -17,7 +17,7 @@ pub fn extract_tarball_to_disk(
 ) -> Result<BTreeMap<String, Value>, String> {
     //create ureq agent
     let agent: Agent = AgentBuilder::new().build();
-    let dest_folder = format!("./node_tests/node_modules/{}", package_name);
+    let dest_folder = format!("./node_modules/{}", package_name);
     // Create the destination folder if it doesn't exist
     if !Path::new(dest_folder.as_str()).exists() {
         fs::create_dir_all(&dest_folder).expect("Failed to create destination folder");
@@ -40,8 +40,8 @@ pub fn extract_tarball_to_disk(
     match response {
         Ok(response) => {
             // Create a temporary file to store the downloaded tar file
-            let mut temp_file = fs::File::create("./node_tests/node_modules/temp.tar.gz")
-                .expect("Failed to create temp file");
+            let mut temp_file =
+                fs::File::create("./node_modules/temp.tar.gz").expect("Failed to create temp file");
             //show download progress for tar file
             if let Some(length) = response
                 .header("content-length")
@@ -65,8 +65,8 @@ pub fn extract_tarball_to_disk(
             copy(&mut res, &mut temp_file).expect("Failed to copy response body to file");
             bar.finish_and_clear();
             // Open the downloaded tar file
-            let tar_file = fs::File::open("./node_tests/node_modules/temp.tar.gz")
-                .expect("Failed to open tar file");
+            let tar_file =
+                fs::File::open("./node_modules/temp.tar.gz").expect("Failed to open tar file");
             // Use Gzip decoder for decompression
             let tar_reader = BufReader::new(GzDecoder::new(tar_file));
             // Create a tar archive from the file
@@ -108,14 +108,12 @@ pub fn extract_tarball_to_disk(
                 });
             ext_bar.finish_with_message("✔");
             // Cleanup: Remove the temporary tar file
-            fs::remove_file("./node_tests/node_modules/temp.tar.gz")
-                .expect("Failed to remove temp file");
+            fs::remove_file("./node_modules/temp.tar.gz").expect("Failed to remove temp file");
             // check if package was installed and read package,json contents
             // if !Path::new(dest_folder.as_str()).exists() {
             //     fs::create_dir_all(&dest_folder).expect("we cant read the installed package");
             // }
-            let mut pckg_dest_folder =
-                format!("./node_tests/node_modules/{}/package.json", package_name);
+            let mut pckg_dest_folder = format!("./node_modules/{}/package.json", package_name);
             //check if there's an extra path inside first
             if !Path::new(pckg_dest_folder.as_str()).exists() {
                 // expect("Failed to create destination folder");

@@ -376,6 +376,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "express"
+version = "0.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2d715e92c6e443681f65ac202f14250bf4fc3f076a0522d7aafcf916e77fff5c"
+
+[[package]]
 name = "exr"
 version = "1.72.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1866,6 +1872,7 @@ dependencies = [
  "console",
  "ctrlc",
  "dialoguer",
+ "express",
  "flate2",
  "image_ascii",
  "indicatif",

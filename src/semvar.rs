@@ -1,6 +1,7 @@
 use ::serde_json::Value;
 use ::std::collections::HashMap;
 use nodejs_semver::{Range, Version};
+use regex::Regex;
 pub fn split_package_version(name: &str) -> (String, String) {
     if name.starts_with('@') {
         // If the string starts with '@', skip the first '@'
@@ -38,16 +39,24 @@ pub fn resolve_semvar_range(
     versions: HashMap<String, Value>,
 ) -> Result<HashMap<String, Value>, String> {
     //get the best version that satisfies the given input
-    // Iterate over everything.
-    // let e = extract_right_side(input);
-    // println!("user input is: {e}");
     for (key, value) in &versions {
-        let version: Version = key.parse().unwrap();
-        let range: Range = extract_right_side(input).trim_matches('"').parse().unwrap();
-        if version.satisfies(&range) {
-            // println!("{key}");
-            let data: HashMap<String, Value> = serde_json::from_value(value.clone()).unwrap();
-            return Ok(data);
+        //check between
+        if is_semver(key.as_str().clone()) {
+            let version: Version = key.parse().unwrap();
+            let range: Range = extract_right_side(input).trim_matches('"').parse().unwrap();
+            if version.satisfies(&range) {
+                // println!("{key}");
+                let data: HashMap<String, Value> = serde_json::from_value(value.clone()).unwrap();
+                return Ok(data);
+            }
+        } else if is_version_range(input) {
+            let range: Range = key.parse().unwrap();
+            let version: Version = extract_right_side(input).trim_matches('"').parse().unwrap();
+            if version.satisfies(&range) {
+                // println!("{key}");
+                let data: HashMap<String, Value> = serde_json::from_value(value.clone()).unwrap();
+                return Ok(data);
+            }
         }
     }
     Ok(versions)
@@ -62,4 +71,13 @@ fn extract_right_side(input_str: &str) -> String {
 
     // If the input string does not contain ':', return it as is
     input_str.to_string()
+}
+fn is_semver(input: &str) -> bool {
+    let semver_regex = Regex::new(r"^\d+\.\d+\.\d+$").unwrap();
+    semver_regex.is_match(input)
+}
+
+fn is_version_range(input: &str) -> bool {
+    let version_range_regex = Regex::new(r"^[~^><]=?\d+\.\d+\.\d+$").unwrap();
+    version_range_regex.is_match(input)
 }

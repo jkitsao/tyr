@@ -1,4 +1,5 @@
 use ctrlc;
+use owo_colors::OwoColorize;
 mod cli;
 mod filesystem;
 mod http;
@@ -12,7 +13,7 @@ use std::collections::{BTreeMap, HashMap};
 mod banner;
 mod reconsole;
 use console::{style, Emoji, Term};
-use indicatif::{HumanDuration, ProgressBar, ProgressStyle};
+use indicatif::{HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
 use serde_json::Value;
 use std::process::ExitCode;
 use std::time::Instant;
@@ -60,6 +61,10 @@ fn main() -> ExitCode {
 // proceed to generate a lock file with
 //also parse semver version if provided, but I'll start
 pub fn resolve_package_from_registry(dep: String, update: bool) {
+    let spinner_style = ProgressStyle::with_template("{prefix:.bold.dim} {spinner} {wide_msg}")
+        .unwrap()
+        .tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ ");
+
     // get the package name and version from user arg
     let (name, version) = semvar::split_package_version(&dep);
     //call installer function
@@ -68,37 +73,49 @@ pub fn resolve_package_from_registry(dep: String, update: bool) {
     //if available no more deps are present
     //iterate over next deps
     if let Ok(dependencies) = next_deps {
-        //play with progress bar for deps
         let pb = ProgressBar::new(dependencies.len() as u64);
-        pb.set_style(
-            ProgressStyle::with_template(
-                // note that bar size is fixed unlike cargo which is dynamic
-                // and also the truncation in cargo uses trailers (`...`)
-                if Term::stdout().size().1 > 80 {
-                    "{prefix:>12.green}  {pos}/{len} {wide_msg}"
-                } else {
-                    "{prefix:>12.green}  {pos}/{len}"
-                },
-            )
-            .unwrap()
-            .progress_chars("** "),
-        );
+        let m = MultiProgress::new();
+        //play with progress bar for deps
+        // pb.set_style(
+        //     ProgressStyle::with_template(
+        //         // note that bar size is fixed unlike cargo which is dynamic
+        //         // and also the truncation in cargo uses trailers (`...`)
+        //         if Term::stdout().size().1 > 80 {
+        //             "{prefix:>12.green}  {pos}/{len} {wide_msg}"
+        //         } else {
+        //             "{prefix:>12.green}  {pos}/{len}"
+        //         },
+        //     )
+        //     .unwrap()
+        //     .progress_chars("** "),
+        // );
+        let mut count = 1;
         for (key, value) in dependencies.iter() {
+            // let count = rng.gen_range(30..80);
+            // let pb = m.add(ProgressBar::new(80));
+            // let pb = ProgressBar::new(dependencies.len() as u64);
             if key.clone() != String::from("status") {
                 let result = format!("{}@{}", key, value);
-                let f = format!("[+] {}", result.clone());
-                pb.inc(1);
-                pb.set_prefix(f);
+                let f = format!("[+]{}", result.clone());
+                pb.set_style(spinner_style.clone());
+                pb.set_prefix(format!("[{}/{}]", count.clone(), dependencies.len()));
+                // pb.inc(1);
+                // pb.set_prefix(f);
                 // Don't update package.json
                 // println!("the result is {}", result);
                 //check if package has been resolved first and use that
                 let should_install = utils::should_resolve_dependency(result.clone());
                 if should_install {
+                    pb.set_message(format!("{}", style(f).bright().bright_green()));
+                    pb.inc(1);
                     resolve_package_from_registry(result, false);
+                    pb.finish_and_clear();
+                    count += 1;
                 }
             }
         }
-        pb.finish();
+        // pb.finish();
+        m.clear().unwrap();
     } else if let Err(err) = next_deps {
         println!("{} {}", PAPER, style(err).bright().yellow());
     }

@@ -63,10 +63,7 @@ pub fn initialize_command_arguments() {
             }
         }
         Commands::Init { name } => {
-            // println!("Initializing {:?}", name);
-            // println!("Initializing: {}",name.unwrap().clone());
             init::init_new_project(name);
-            // dialogue::dialogue();
         }
         Commands::Run { name } => {
             //

@@ -5,7 +5,7 @@ use ::std::collections::BTreeMap;
 use nodejs_semver::{Range, Version};
 use std::fs;
 use std::io;
-use std::io::{copy, BufReader};
+use std::io::BufReader;
 use std::path::{Path, PathBuf};
 //
 

@@ -10,7 +10,7 @@ If tyr.lock is absent, or is not enough to satisfy all the dependencies listed i
 */
 use std::collections::{HashMap, HashSet};
 // use std::collections::HashMap;
-// use crate::resolve_package_from_registry;
+use crate::resolve_package_from_registry;
 // use std::fs;
 // use itertools::Itertools;
 use std::fs;
@@ -48,30 +48,25 @@ pub fn load_entries_from_lockfile(lockfile_path: &str) {
                     }
                 })
                 .collect();
-
-            // If you specifically need Vec<&str>, you can map the formatted strings into &str.
-            // let flattened_json_packages: Vec<&str> = formatted_deps.iter().map(|s| s.as_str()).collect();
             // parse lock file
             let lock_file_text = fs::read_to_string(lockfile_path).unwrap();
             // Split input into lines and filter out empty lines
             let packages = parse_lock_file(lock_file_text.as_str());
             //remove non string char from packages
-            // let valid_
-            // let to_json=serde_json::from_value(packages);
             //flatten lock file deps to a vec also of string@version
             let flattened_lock_packages = flatten_packages(&packages);
-            // println!("flattened package json: {:?} and locks are {:?}",flattened_json_packages,flattened_lock_packages);
+            // println!("flattened lock: {:?}", flattened_lock_packages);
             //turn both values to sets and compare differences
             let lock_file_set: HashSet<String> = flattened_lock_packages.into_iter().collect();
             let json_data_set: HashSet<String> = flattened_json_packages.into_iter().collect();
-            // Symmetric difference of hashsets
+            // Symmetric difference of hashsets:
+            //the values that are in self or in other but not in both
             let results: HashSet<&String> =
                 json_data_set.symmetric_difference(&lock_file_set).collect();
-            println!("The sym difference is: {:?}", results)
+            println!("The sym difference is: {:?}", results);
             // let result =Vec::from_iter(res);
-            //
             // for pckg in results {
-            //     resolve_package_from_registry(pckg.to_string(),false)
+            //     resolve_package_from_registry(pckg.to_string(), false)
             // }
         }
         false => {
@@ -86,39 +81,11 @@ fn remove_non_numbers(input: &str) -> String {
         .collect();
     result
 }
-
-// // Step 3: Internal Algorithm to Identify Missing Entries
-// fn find_missing_entries(
-//     lockfile_entries: &HashMap<String, String>,
-//     manifest_entries: &HashMap<String, String>,
-// ) -> HashSet<String> {
-//     // Implement logic to compare entries and find missing dependencies
-//     // Return a HashSet of dependency names that are missing or need updates
-//     // Example: {"missing_dependency1", "outdated_dependency2", ...}
-//     // unimplemented!()
-//     println("lockfile content is {}", lockfile_entries);
-//     println("manifest content is {}", manifest_entries);
-// }
-
-// // Example Usage
-// fn install() {
-//     let lockfile_path = "./tyr.lock";
-//     let manifest_path = "./package.json";
-
-//     let lockfile_entries = load_entries_from_lockfile(lockfile_path);
-//     let manifest_entries = read_manifest_files(manifest_path);
-
-//     let missing_entries = find_missing_entries(&lockfile_entries, &manifest_entries);
-
-//     // Output or handle the missing entries as needed
-//     println!("Missing or outdated dependencies: {:?}", missing_entries);
-// }
-
 #[derive(Debug)]
 struct Package {
     version: String,
-    resolved: String,
-    integrity: String,
+    // _resolved: String,
+    // _integrity: String,
     dependencies: HashMap<String, String>,
 }
 
@@ -155,8 +122,8 @@ fn parse_lock_file(lock_file_content: &str) -> HashMap<String, Package> {
 
 fn parse_package_data(data: &str) -> Package {
     let mut version = String::new();
-    let mut resolved = String::new();
-    let mut integrity = String::new();
+    // let mut resolved = String::new();
+    // let mut integrity = String::new();
     let mut dependencies = HashMap::new();
 
     let mut parsing_dependencies = false;
@@ -185,8 +152,8 @@ fn parse_package_data(data: &str) -> Package {
             if parts.len() >= 2 {
                 match parts[0] {
                     "version" => version = remove_non_numbers(parts[1]),
-                    "resolved" => resolved = parts[1].to_string(),
-                    "integrity" => integrity = parts[1].to_string(),
+                    // "resolved" => resolved = parts[1].to_string(),
+                    // "integrity" => integrity = parts[1].to_string(),
                     _ => {}
                 }
             }
@@ -195,8 +162,6 @@ fn parse_package_data(data: &str) -> Package {
 
     Package {
         version,
-        resolved,
-        integrity,
         dependencies,
     }
 }

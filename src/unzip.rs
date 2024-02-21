@@ -106,13 +106,9 @@ pub fn extract_tarball_to_disk(
                         .unpack(&dest_path)
                         .expect("Failed to unpack tar entry");
                 });
-            ext_bar.finish_with_message("✔");
+            ext_bar.finish_and_clear();
             // Cleanup: Remove the temporary tar file
             fs::remove_file("./node_modules/temp.tar.gz").expect("Failed to remove temp file");
-            // check if package was installed and read package,json contents
-            // if !Path::new(dest_folder.as_str()).exists() {
-            //     fs::create_dir_all(&dest_folder).expect("we cant read the installed package");
-            // }
             let mut pckg_dest_folder = format!("./node_modules/{}/package.json", package_name);
             //check if there's an extra path inside first
             if !Path::new(pckg_dest_folder.as_str()).exists() {
@@ -131,7 +127,6 @@ pub fn extract_tarball_to_disk(
             //if dep is available
             match json_file_data.contains_key("dependencies") {
                 true => {
-                    // println!("Dep object detected we should append to json");
                     //update the dep object with installed package metadata
                     let current_dep: Value =
                         json_file_data.get_mut("dependencies").unwrap().clone();

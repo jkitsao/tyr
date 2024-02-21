@@ -84,23 +84,23 @@ pub fn get_response(name: &str, version: &str) -> Result<Response, Error> {
         }
 
         Err(Error::Status(500, request.call().unwrap()))
-    } else {
-        //fetch a package and a list of dependencies
+    }
+    /*
+
+    */
+    else {
+        //fetch a package and a list of versions
         //we'll need to iter the deps and find a range that satisfies the aversion passed
         let url = format!("{}/{}/", NPM_REGISTRY_URL, name,);
-        // println!("URL: {}", url);
-
         let agent = Agent::new();
         let request = agent.get(&url).set(
             "Accept",
             "application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*",
         );
-
         // Set request headers
         // Perform the HTTP request with retries
         for _ in 0..5 {
             let response = request.clone().call();
-
             match response {
                 Ok(response) => {
                     //show

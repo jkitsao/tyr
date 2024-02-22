@@ -48,17 +48,17 @@ enum Commands {
 static TRUCK: Emoji<'_, '_> = Emoji("🚚  ", "");
 pub fn initialize_command_arguments() {
     let args = Cli::parse();
-    //
     match args.command {
         Commands::Add { packages } => {
-            //loop over packages and install each
+            //loop over packages and install each, this handles cases where the user adds
+            // ...multiple packages as command args i.e tyrr add react next mantine
             for package in packages.iter() {
                 let msg = format!(
-                    "{} Fetching version information for {} \n",
+                    "{} Generating Dependency Graph for: {} \n",
                     TRUCK,
-                    package.clone()
+                    style(package.clone()).bright().green()
                 );
-                println!("{}", style(msg).bold().bright().yellow());
+                println!("{}", style(msg).bold().yellow());
                 resolve_package_from_registry(package.to_owned(), true)
             }
         }
@@ -66,15 +66,18 @@ pub fn initialize_command_arguments() {
             init::init_new_project(name);
         }
         Commands::Run { name } => {
-            //
+            // Script runner
             let _ = scripts::execute_script(name[0].as_str());
         }
         Commands::Install => {
-            println!("Installing Dependencies");
+            println!(
+                "{}\n",
+                style("Installing Dependencies").bold().bright().yellow()
+            );
             let lockfile_path = "./tyr.lock";
             install::load_entries_from_lockfile(lockfile_path);
-            //get a set of packages to install by computing the sym difference between
-            //lock file and json file
+            //get a set of packages to install by computing the sym difference between...
+            //...lock file and json file
         }
     }
 }

@@ -5,7 +5,7 @@ package.json in the local node_modules folder.
 
 If tyr.lock is present and is enough to satisfy all the dependencies listed in package.json, the exact versions recorded in tyr.lock are installed, and tyr.lock will be unchanged. tyr will not check for newer versions.
 
-If tyr.lock is absent, or is not enough to satisfy all the dependencies listed in package.json (for example, if you manually add a dependency to package.json), Yarn looks for the newest versions available that satisfy the constraints in package.json. The results are written to yarn.lock.
+If tyr.lock is absent, or is not enough to satisfy all the dependencies listed in package.json (for example, if you manually add a dependency to package.json), Tyrr should look for the newest versions available that satisfy the constraints in package.json. The results are written to tyrr.lock.
 
 */
 use std::collections::{HashMap, HashSet};
@@ -55,7 +55,6 @@ pub fn load_entries_from_lockfile(lockfile_path: &str) {
             //remove non string char from packages
             //flatten lock file deps to a vec also of string@version
             let flattened_lock_packages = flatten_packages(&packages);
-            // println!("flattened lock: {:?}", flattened_lock_packages);
             //turn both values to sets and compare differences
             let lock_file_set: HashSet<String> = flattened_lock_packages.into_iter().collect();
             let json_data_set: HashSet<String> = flattened_json_packages.into_iter().collect();
@@ -63,11 +62,13 @@ pub fn load_entries_from_lockfile(lockfile_path: &str) {
             //the values that are in self or in other but not in both
             let results: HashSet<&String> =
                 json_data_set.symmetric_difference(&lock_file_set).collect();
-            println!("The sym difference is: {:?}", results);
+            // println!("The sym difference is: {:?}", results);
             // let result =Vec::from_iter(res);
-            // for pckg in results {
-            //     resolve_package_from_registry(pckg.to_string(), false)
-            // }
+            for pckg in results {
+                //update controlls when to create/update the the dependencies field...
+                //...on the package json file. Here it should be set to false
+                resolve_package_from_registry(pckg.to_string(), false)
+            }
         }
         false => {
             println!("Cannot find dependencies to install, Check your package.json file")

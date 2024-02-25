@@ -4,30 +4,6 @@
 
 Tyr is a lightweight, fast, and reliable package manager for Node.js projects, implemented in Rust. It aims to provide efficient dependency management, project initialization, and package installation workflows.
 
-## Running from Source
-
-To run Tyr from the source code, ensure that you have Rust installed. You can install Rust by following the instructions on the [official website](https://www.rust-lang.org/tools/install).
-
-Clone the repository:
-
-```sh
-git clone https://github.com/jkitsao/tyr.git
-```
-
-Navigate to the project directory:
-
-```sh
-cd tyr
-```
-
-Run Tyr with Cargo:
-
-```sh
-cargo run <command>
-```
-
-Replace `command` with one of the supported commands, such as init, add, etc.
-
 # Features
 
 - `Init:` Initialize a new Node.js project with a basic project structure and a package.json file.
@@ -59,33 +35,29 @@ npx tyrr <command>
 
 ```
 
-### Cargo:
+## Running from Source
 
-For developers who want to contribute or experiment with Tyrr's Rust codebase, follow these steps:
+To run Tyr from the source code, ensure that you have Rust installed. You can install Rust by following the instructions on the [official website](https://www.rust-lang.org/tools/install).
 
-1.  Clone the Tyrr repository from GitHub:
+Clone the repository:
 
 ```sh
-
 git clone https://github.com/jkitsao/tyr.git
-
 ```
 
-1.  Navigate into the cloned repository:
+Navigate to the project directory:
 
 ```sh
-
 cd tyr
-
 ```
 
-1.  Run Tyrr using Cargo:
+Run Tyr with Cargo:
 
 ```sh
-
-cargo run  <command>
-
+cargo run <command>
 ```
+
+Replace `command` with one of the supported commands, such as init, add, etc.
 
 Choose the option that best suits your needs to start using Tyrr and enhance your Node.js development workflow.
 

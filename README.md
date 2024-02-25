@@ -2,7 +2,7 @@
 
 # Tyr - A Node.js Package Manager Written in Rust
 
-Tyr is a lightweight, fast, and reliable package manager for Node.js projects, implemented in Rust. It aims to provide efficient dependency management, project initialization, and package installation workflows.
+Tyr (referred to as 'Tyrr' in the npm ecosystem due to naming conflicts) is a lightweight, fast, and reliable package manager for Node.js projects, implemented in Rust. It aims to provide efficient dependency management, project initialization, and package installation workflows.
 
 # Features
 

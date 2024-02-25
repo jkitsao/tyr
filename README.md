@@ -182,18 +182,6 @@ tyrr run dev
 
 Tyrr doesn't require any additional configuration files. It leverages the `package.json` and `tyr.lock` files to manage project dependencies seamlessly.
 
-## Contributing
-
-Tyrr is an open-source project, and we welcome contributions from the community. If you encounter any bugs or have suggestions for improvements, please feel free to submit a pull request on the [GitHub repository](https://github.com/jkitsao/tyr).
-
-## Feedback and Support
-
-For feedback, suggestions, or support inquiries, don't hesitate to reach out to us via GitHub Issues or contact us via email at kitsaojackson22@gmail.com.
-
-## License
-
-This project is licensed under the MIT License. See the LICENSE file for details.
-
 # Additional Improvements
 
 - `Dependency Management:` Support for updating, removing, and listing dependencies.
@@ -205,3 +193,15 @@ This project is licensed under the MIT License. See the LICENSE file for details
 Tyr is currently in early development and may not be suitable for use in production environments. Use it at your own risk.
 
 ---
+
+## Contributing
+
+Tyrr is an open-source project, and we welcome contributions from the community. If you encounter any bugs or have suggestions for improvements, please feel free to submit a pull request on the [GitHub repository](https://github.com/jkitsao/tyr).
+
+## Feedback and Support
+
+For feedback, suggestions, or support inquiries, don't hesitate to reach out to us via GitHub Issues or contact us via email at kitsaojackson22@gmail.com.
+
+## License
+
+This project is licensed under the MIT License. See the LICENSE file for details.

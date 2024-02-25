@@ -35,6 +35,7 @@ Replace `command` with one of the supported commands, such as init, add, etc.
 - `Lock File Generation:` Create a lock file (tyr.lock) to track dependency versions.
 - `Script Execution:` Ability to execute scripts defined in the package.json file.
 - `Install Command:` Install dependencies specified in the tyr.lock file.
+- `Versioning:` Semantic versioning support for package management and updates.
 
 ## Installation
 
@@ -181,6 +182,18 @@ tyrr run dev
 
 Tyrr doesn't require any additional configuration files. It leverages the `package.json` and `tyr.lock` files to manage project dependencies seamlessly.
 
+# Additional Improvements
+
+- `Dependency Management:` Support for updating, removing, and listing dependencies.
+- `Registry Support:` Allow configuring custom registries for package installation.
+- `Concurrency:` Parallel dependency resolution and installation for faster performance.
+
+⚠️ **Warning: Do Not Use in Production**
+
+Tyr is currently in early development and may not be suitable for use in production environments. Use it at your own risk.
+
+---
+
 ## Contributing
 
 Tyrr is an open-source project, and we welcome contributions from the community. If you encounter any bugs or have suggestions for improvements, please feel free to submit a pull request on the [GitHub repository](https://github.com/jkitsao/tyr).
@@ -192,16 +205,3 @@ For feedback, suggestions, or support inquiries, don't hesitate to reach out to 
 ## License
 
 This project is licensed under the MIT License. See the LICENSE file for details.
-
-# Additional Features
-
-- `Dependency Management:` Support for updating, removing, and listing dependencies.
-- `Registry Support:` Allow configuring custom registries for package installation.
-- `Concurrency:` Parallel dependency resolution and installation for faster performance.
-- `Versioning:` Semantic versioning support for package management and updates.
-
-⚠️ **Warning: Do Not Use in Production**
-
-Tyr is currently in early development and may not be suitable for use in production environments. Use it at your own risk.
-
----

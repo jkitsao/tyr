@@ -25,7 +25,7 @@ fn remove_non_numbers(input: &str) -> String {
 pub fn get_response(name: &str, version: &str) -> Result<Response, Error> {
     //check the version passed first
     if is_semver_number(version) {
-        let _bar = ProgressBar::new(!0).with_prefix("Fetching...").with_style(
+        let bar = ProgressBar::new(!0).with_prefix("Fetching...").with_style(
             ProgressStyle::default_spinner()
                 .template("{prefix:>12.bright.cyan} {spinner} {msg:.cyan}")
                 .unwrap(),
@@ -49,7 +49,7 @@ pub fn get_response(name: &str, version: &str) -> Result<Response, Error> {
         // Perform the HTTP request with retries
         for _ in 0..5 {
             let response = request.clone().call();
-
+            bar.set_message("Fetching {name.clone()}");
             match response {
                 Ok(response) => {
                     //show

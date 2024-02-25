@@ -12,7 +12,7 @@ mod utils;
 use std::collections::{BTreeMap, HashMap};
 mod banner;
 mod reconsole;
-use console::{style, Emoji, Term};
+use console::{style, Emoji};
 use indicatif::{HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
 use serde_json::Value;
 use std::process::ExitCode;
@@ -91,16 +91,11 @@ pub fn resolve_package_from_registry(dep: String, update: bool) {
         // );
         let mut count = 1;
         for (key, value) in dependencies.iter() {
-            // let count = rng.gen_range(30..80);
-            // let pb = m.add(ProgressBar::new(80));
-            // let pb = ProgressBar::new(dependencies.len() as u64);
             if key.clone() != String::from("status") {
                 let result = format!("{}@{}", key, value);
                 let f = format!("[+]{}", result.clone());
                 pb.set_style(spinner_style.clone());
                 pb.set_prefix(format!("[{}/{}]", count.clone(), dependencies.len()));
-                // pb.inc(1);
-                // pb.set_prefix(f);
                 // Don't update package.json
                 // println!("the result is {}", result);
                 //check if package has been resolved first and use that
@@ -114,7 +109,6 @@ pub fn resolve_package_from_registry(dep: String, update: bool) {
                 }
             }
         }
-        // pb.finish();
         m.clear().unwrap();
     } else if let Err(err) = next_deps {
         println!("{} {}", PAPER, style(err).bright().yellow());

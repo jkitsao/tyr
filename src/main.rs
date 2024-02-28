@@ -13,10 +13,10 @@ use std::collections::{BTreeMap, HashMap};
 mod banner;
 mod reconsole;
 use console::{style, Emoji};
-use indicatif::{HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
+use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use serde_json::Value;
-use std::process::ExitCode;
-use std::time::Instant;
+use std::process::{self, ExitCode};
+// use std::time::Instant;
 static _LOOKING_GLASS: Emoji<'_, '_> = Emoji("🔍  ", "");
 static _TRUCK: Emoji<'_, '_> = Emoji("🚚  ", "");
 static _CLIP: Emoji<'_, '_> = Emoji("🔗  ", "");
@@ -37,22 +37,13 @@ fn main() -> ExitCode {
             .yellow()
             .bright()
         );
+        process::exit(0)
         // return ControlFlow::Break();
         //exit with code
     })
     .expect("Error setting Ctrl-C handler");
     //
-    let started = Instant::now();
     cli::initialize_command_arguments();
-    println!(
-        "{} {} {}",
-        SPARKLE,
-        style("Done in").yellow().bold().bright(),
-        style(HumanDuration(started.elapsed()))
-            .yellow()
-            .bold()
-            .bright()
-    );
     ExitCode::SUCCESS
 }
 //resolve dependency/impl add command
@@ -64,7 +55,6 @@ pub fn resolve_package_from_registry(dep: String, update: bool) {
     let spinner_style = ProgressStyle::with_template("{prefix:.bold.dim} {spinner} {wide_msg}")
         .unwrap()
         .tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ ");
-
     // get the package name and version from user arg
     let (name, version) = semvar::split_package_version(&dep);
     //call installer function
@@ -75,20 +65,6 @@ pub fn resolve_package_from_registry(dep: String, update: bool) {
     if let Ok(dependencies) = next_deps {
         let pb = ProgressBar::new(dependencies.len() as u64);
         let m = MultiProgress::new();
-        //play with progress bar for deps
-        // pb.set_style(
-        //     ProgressStyle::with_template(
-        //         // note that bar size is fixed unlike cargo which is dynamic
-        //         // and also the truncation in cargo uses trailers (`...`)
-        //         if Term::stdout().size().1 > 80 {
-        //             "{prefix:>12.green}  {pos}/{len} {wide_msg}"
-        //         } else {
-        //             "{prefix:>12.green}  {pos}/{len}"
-        //         },
-        //     )
-        //     .unwrap()
-        //     .progress_chars("** "),
-        // );
         let mut count = 1;
         for (key, value) in dependencies.iter() {
             if key.clone() != String::from("status") {

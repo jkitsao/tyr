@@ -41,7 +41,7 @@ pub fn resolve_semvar_range(
     //get the best version that satisfies the given input
     for (key, value) in &versions {
         //check between
-        if is_semver(key.as_str().clone()) {
+        if is_semver(key.as_str()) {
             let version: Version = key.parse().unwrap();
             let range: Range = extract_right_side(input).trim_matches('"').parse().unwrap();
             if version.satisfies(&range) {

@@ -1,10 +1,11 @@
 use crate::init;
-// use crate::banner::draw_banner;
 use crate::install;
 use crate::resolve_package_from_registry;
 use crate::scripts;
 use clap::{Parser, Subcommand};
 use console::{style, Emoji};
+use indicatif::{HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
+use std::time::Instant;
 // use crate::dialogue;
 /// Another Node resource Negotiator
 #[derive(Debug, Parser)] // requires `derive` feature
@@ -46,6 +47,7 @@ enum Commands {
 }
 //
 static TRUCK: Emoji<'_, '_> = Emoji("🚚  ", "");
+static SPARKLE: Emoji<'_, '_> = Emoji("✨ ", ":-)");
 pub fn initialize_command_arguments() {
     let args = Cli::parse();
     match args.command {
@@ -53,13 +55,25 @@ pub fn initialize_command_arguments() {
             //loop over packages and install each, this handles cases where the user adds
             // ...multiple packages as command args i.e tyrr add react next mantine
             for package in packages.iter() {
+                //track the time
+                let started = Instant::now();
                 let msg = format!(
                     "{} Generating Dependency Graph for: {} \n",
                     TRUCK,
                     style(package.clone()).bright().green()
                 );
                 println!("{}", style(msg).bold().yellow());
-                resolve_package_from_registry(package.to_owned(), true)
+                resolve_package_from_registry(package.to_owned(), true);
+                //show elapsed time to the user
+                println!(
+                    "{} {} {}",
+                    SPARKLE,
+                    style("Done in").yellow().bold().bright(),
+                    style(HumanDuration(started.elapsed()))
+                        .yellow()
+                        .bold()
+                        .bright()
+                );
             }
         }
         Commands::Init { name } => {

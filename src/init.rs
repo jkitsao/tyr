@@ -1,6 +1,7 @@
 /*
     Function used to initialize the project
 */
+use console::style;
 use serde_json::json;
 // use serde_json::Value;
 use std::fs;
@@ -93,7 +94,7 @@ pub fn init_new_project(_default: Option<String>) {
     let repo_url: String = Input::with_theme(&ColorfulTheme::default())
         .with_prompt("Repository URL")
         .validate_with(|input: &String| -> Result<(), ParseError> {
-            let url = Url::parse(input.as_str().clone());
+            let url = Url::parse(input.as_str());
             match url {
                 Ok(_url) => Ok(()),
                 Err(err) => Err(err),
@@ -120,13 +121,13 @@ pub fn init_new_project(_default: Option<String>) {
 
     println!("License: {}", license.to_uppercase());
     //  get is project private
-    let private_input = Input::with_theme(&ColorfulTheme::default())
-        .with_prompt("Private")
-        .default("false".to_string())
-        .interact_text()
-        .unwrap();
+    // let private_input = Input::with_theme(&ColorfulTheme::default())
+    //     .with_prompt("Private")
+    //     .default("false".to_string())
+    //     .interact_text()
+    //     .unwrap();
 
-    println!("Permissions: {}", private_input);
+    // println!("Permissions: {}", private_input);
     //construct new project from user input
     let project = Project::new_project(
         name.trim().parse().unwrap(),
@@ -139,20 +140,25 @@ pub fn init_new_project(_default: Option<String>) {
         private,
     );
 
-    // now I can mess with the file system
     let dir_name = "./".to_string();
     // first build a directory for the project
     //format project name
     fs::create_dir_all(dir_name).expect("failed to create directory");
     // create a package.json file with the project metadata
     create_package_json_file(project).unwrap();
-    println!("success Saved package.json");
+    println!(
+        "{}",
+        style("\nPackage.json successfully saved")
+            .bright()
+            .green()
+            .bold()
+    );
 }
 // create and save metadata to package.json
 fn create_package_json_file(project: Project) -> io::Result<()> {
     let mut path_name = "./package.json".to_string();
     //check if package file is available
-    let file = fs::File::create(&mut path_name).expect("failed to create a package.json file");
+    let file = fs::File::create(&mut path_name)?;
     // use serde json create to create a json...
     //value from the Project Struct and write to a file
     let package_json_values = json!({

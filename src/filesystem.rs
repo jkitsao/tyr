@@ -1,4 +1,5 @@
 use clap::Error;
+use console::{style, Emoji};
 use serde_json::json;
 use serde_json::Value;
 use std::collections::BTreeMap;
@@ -55,7 +56,7 @@ pub fn generate_lock_file(
         .append(true)
         .create(true)
         .open(&mut path_name)
-        .expect("failed to create a tyr.lock file");
+        .expect("Failed to create tyr.lock file. Please check permissions and try again");
     //construct a new lock object with package metadata
     let lock = LockFile {
         name: name
@@ -114,7 +115,13 @@ pub fn update_package_jason_dep(package: HashMap<String, Value>, update: bool) -
             update_dep_obj(json_file_data, name.clone(), version, update).unwrap();
         }
         false => {
-            println!("Dep object not found we should create then add");
+            println!(
+                "{}",
+                style("Dependencies object created/updated in package.json.")
+                    .bright()
+                    .green()
+                    .bold()
+            );
             // probably the first package
             create_dep_obj(json_file_data, name, version).unwrap();
         }
@@ -138,7 +145,8 @@ fn create_dep_obj(
     metadata.extend(dep_value);
     let result = json!(metadata);
     let mut path_name = "./package.json".to_string();
-    let file = fs::File::create(&mut path_name).expect("failed to create a package.json file");
+    let file = fs::File::create(&mut path_name)
+        .expect("Failed to create package.json file. Please check permissions and try again");
     // write to package.json file
     let mut writer = BufWriter::new(file);
     serde_json::to_writer_pretty(&mut writer, &result)?;

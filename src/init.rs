@@ -77,7 +77,7 @@ pub fn init_new_project(_default: Option<String>) {
     //get project description
     let description = Input::with_theme(&ColorfulTheme::default())
         .with_prompt("Project Description")
-        .default("NodeJS Application".to_string())
+        .default("An awesome Node.js project".to_string())
         .interact_text()
         .unwrap();
 
@@ -149,7 +149,7 @@ pub fn init_new_project(_default: Option<String>) {
     println!(
         "{}",
         style("\nPackage.json successfully saved")
-            .bright()
+            .dim()
             .green()
             .bold()
     );

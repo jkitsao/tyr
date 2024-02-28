@@ -30,11 +30,11 @@ fn main() -> ExitCode {
         println!(
             "{}",
             style(
-                "Received interrupt signal (Ctrl+C). Gracefully shutting down...
+                "\nReceived interrupt signal (Ctrl+C). \nGracefully shutting down...
     "
             )
             .bold()
-            .yellow()
+            .red()
             .bright()
         );
         process::exit(0)

@@ -21,8 +21,6 @@ use std::io::BufReader;
 // Step 1: Load Entries from Lockfile
 pub fn load_entries_from_lockfile(lockfile_path: &str) {
     // Implement logic to read and parse the lockfile
-    // Return a HashMap with dependency names as keys and versions as values
-    // Example: {"dependency1": "1.2.3", "dependency2": "4.5.6", ...}
     //read package json file metadata
     let path_name = "./package.json".to_string();
     let file = fs::File::open(path_name).unwrap();

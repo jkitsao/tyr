@@ -21,7 +21,7 @@ static _LOOKING_GLASS: Emoji<'_, '_> = Emoji("🔍  ", "");
 static _TRUCK: Emoji<'_, '_> = Emoji("🚚  ", "");
 static _CLIP: Emoji<'_, '_> = Emoji("🔗  ", "");
 static PAPER: Emoji<'_, '_> = Emoji("📃  ", "");
-static SPARKLE: Emoji<'_, '_> = Emoji("✨ ", ":-)");
+static _SPARKLE: Emoji<'_, '_> = Emoji("✨ ", ":-)");
 //update structure
 
 fn main() -> ExitCode {
@@ -69,7 +69,7 @@ pub fn resolve_package_from_registry(dep: String, update: bool) {
         for (key, value) in dependencies.iter() {
             if key.clone() != String::from("status") {
                 let result = format!("{}@{}", key, value);
-                let f = format!("[+]{}", result.clone());
+                let f = format!("[+]{}✅", result.clone());
                 pb.set_style(spinner_style.clone());
                 pb.set_prefix(format!("[{}/{}]", count.clone(), dependencies.len()));
                 // Don't update package.json
